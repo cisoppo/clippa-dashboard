@@ -160,15 +160,15 @@
   <div class="kpi-grid" id="kpi-grid"></div>
 
   <div class="tabs-bar">
-    <button class="tab-btn active" onclick="switchTab('visao-geral')">📊 Visão Geral</button>
-    <button class="tab-btn" onclick="switchTab('contratos')">📋 Contratos</button>
+    <button class="tab-btn" onclick="switchTab('visao-geral')">📊 Visão Geral</button>
+    <button class="tab-btn active" onclick="switchTab('contratos')">📋 Contratos</button>
     <button class="tab-btn" onclick="switchTab('recebimentos')">💰 Recebimentos</button>
     <button class="tab-btn" onclick="switchTab('renovacoes')">🔄 Renovações</button>
     <button class="tab-btn" onclick="switchTab('projecao')">📈 Projeção MRR</button>
   </div>
 
-  <div id="visao-geral" class="tab-pane active"></div>
-  <div id="contratos" class="tab-pane"></div>
+  <div id="visao-geral" class="tab-pane"></div>
+  <div id="contratos" class="tab-pane active"></div>
   <div id="recebimentos" class="tab-pane"></div>
   <div id="renovacoes" class="tab-pane"></div>
   <div id="projecao" class="tab-pane"></div>
@@ -535,7 +535,7 @@ function buildVisaoGeral() {
     });
   }, 50);
 }
-buildVisaoGeral();
+buildContratos();
 
 // ═══════════════════════════════════════════════════════
 // TAB: CONTRATOS
@@ -927,7 +927,7 @@ function buildProjecao() {
 // TAB SWITCHER
 // ═══════════════════════════════════════════════════════
 
-let builtTabs = { 'visao-geral': true };
+let builtTabs = { 'contratos': true };
 
 function switchTab(id) {
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
@@ -939,6 +939,7 @@ function switchTab(id) {
 
   if (!builtTabs[id]) {
     builtTabs[id] = true;
+    if (id === 'visao-geral')  buildVisaoGeral();
     if (id === 'contratos')    buildContratos();
     if (id === 'recebimentos') buildRecebimentos();
     if (id === 'renovacoes')   buildRenovacoes();
