@@ -243,10 +243,12 @@ function diffDays(a, b) { return Math.round((b-a)/(1000*60*60*24)); }
 function addMonths(d, n) { const r = new Date(d); r.setMonth(r.getMonth()+n); return r; }
 
 function getMRRStatus(c) {
-  const fim = parseDate(c.fim);
   const inicio = parseDate(c.inicio);
-  if (fim < TODAY) return 'vencido';
   if (inicio > TODAY) return 'futuro';
+  // Considera ativo se ainda há cobrança registrada neste mês (mesmo com contrato vencido)
+  const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
+  const fim = parseDate(c.fim);
+  if (fim < TODAY && !pagAbr) return 'vencido';
   return 'ativo';
 }
 
@@ -319,9 +321,15 @@ function buildAlerts() {
   const anomalia = contratos.find(c => c.clube === 'RioMafra Padel');
 
   let html = '';
-  if (vencidos.length) {
-    const nomes = vencidos.map(c => `<strong>${c.clube}</strong>`).join(', ');
-    html += `<div class="alert-bar danger"><span class="alert-icon">🚨</span> ${vencidos.length} contrato(s) VENCIDO(S) sem renovação confirmada: ${nomes} — total de <strong>${fmt(vencidos.reduce((s,c)=>s+c.mrr,0))}/mês em risco</strong></div>`;
+  // Contratos com data vencida mas ainda cobrando (precisam renovar o documento)
+  const precisamRenovar = contratos.filter(c => {
+    const fim = parseDate(c.fim);
+    const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
+    return fim < TODAY && pagAbr;
+  });
+  if (precisamRenovar.length) {
+    const nomes = precisamRenovar.map(c => `<strong>${c.clube}</strong>`).join(', ');
+    html += `<div class="alert-bar warning"><span class="alert-icon">⚠️</span> ${precisamRenovar.length} contrato(s) com data vencida mas ainda ativos: ${nomes} — <strong>renovar documento do contrato</strong></div>`;
   }
   if (semPagamento.length) {
     const nomes = semPagamento.map(c => `<strong>${c.clube}</strong>`).join(', ');
@@ -334,6 +342,11 @@ buildAlerts();
 
 // ── KPIs ──
 function buildKPIs() {
+  const precisamRenovar = contratos.filter(c => {
+    const fim = parseDate(c.fim);
+    const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
+    return fim < TODAY && pagAbr;
+  });
   const ativos = contratos.filter(c => getMRRStatus(c) === 'ativo');
   const mrrAtual = calcMesEsperado('abr'); // esperado para abril
   const mrrMarco = calcMesMRR('mar');
@@ -354,8 +367,8 @@ function buildKPIs() {
       chip:`${contratos.filter(c=>getMRRStatus(c)==='futuro').length} futuros`, chipCls:'chip-gray' },
     { label:'Câmeras Ativas', value: activeCameras, sub:`de ${totalCameras} total`, cls:'teal',
       chip:`${(mrrAtual/activeCameras).toFixed(0)}/câm`, chipCls:'chip-gray' },
-    { label:'MRR em Risco', value: fmt(mrrVencido), sub:`${vencidos.length} contrato(s) vencido(s)`, cls:'red',
-      chip:'Renovar urgente', chipCls:'chip-warn' },
+    { label:'Contratos s/ Renovação', value: precisamRenovar.length, sub:`Central Arena, Maidl, Paiol`, cls:'orange',
+      chip:'Renovar documento', chipCls:'chip-warn' },
   ];
 
   document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
@@ -445,7 +458,7 @@ function buildVisaoGeral() {
       <div class="card mb-0">
         <div class="card-title"><div class="card-title-left">⚠️ Pontos de Atenção</div></div>
         <div class="obs-list">
-          <div class="obs danger"><strong>3 contratos vencidos</strong> (Central Arena, Arena Maidl, Espaço Paiol) — mas cobrança Abr foi enviada. Confirmar renovação ou encerramento.</div>
+          <div class="obs warn"><strong>3 contratos com documento vencido</strong> (Central Arena, Arena Maidl, Espaço Paiol) — clientes ainda ativos e pagando, mas precisam assinar novo contrato.</div>
           <div class="obs danger"><strong>Rio Negrense</strong>: contrato ativo desde Dez/25 mas zero pagamentos registrados. Verificar implantação/ativação.</div>
 <div class="obs warn"><strong>Coliseu, TW Padel, ItaPadel, Arena Itaiópolis</strong>: pagamento de Abril não marcado como enviado. Cobranças pendentes?</div>
           <div class="obs" style="border-color:#22c55e;background:#f0fdf4;color:#15803d;"><strong>Maio projetado: ${fmt(calcMesEsperado('mai'))}</strong> (+R$1.290 com 3 novos clientes)</div>
