@@ -3,104 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clippa · Dashboard Financeiro 2026</title>
+  <title>Clippa · Dashboard 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; }
 
-    /* HEADER */
-    header { background: #0f172a; color: #fff; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
-    .logo { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
-    .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; color: #94a3b8; }
+    /* ── HEADER ── */
+    header { background: #0f172a; color: #fff; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.4); }
+    .logo-text { font-size: 26px; font-weight: 900; letter-spacing: -1px; color: #f97316; }
+    .logo-sub  { font-size: 11px; color: #475569; margin-left: 8px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #94a3b8; }
+    .btn-refresh { background: #1e293b; border: 1px solid #f97316; color: #f97316; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+    .btn-refresh:hover { background: #f97316; color: #fff; }
 
-    /* ALERTS */
-    .alerts-section { display: flex; flex-direction: column; gap: 0; }
+    /* ── LOADING ── */
+    #loading { display: flex; align-items: center; justify-content: center; min-height: 70vh; flex-direction: column; gap: 16px; }
+    .spinner { width: 44px; height: 44px; border: 3px solid #e2e8f0; border-top: 3px solid #f97316; border-radius: 50%; animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #main-content { display: none; }
+
+    /* ── ALERTS ── */
+    .alerts-section { display: flex; flex-direction: column; }
     .alert-bar { padding: 11px 32px; font-size: 13px; display: flex; align-items: center; gap: 10px; font-weight: 500; }
-    .alert-bar.danger { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
-    .alert-bar.warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
-    .alert-bar.info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
-    .alert-icon { font-size: 16px; }
+    .alert-bar.danger  { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
+    .alert-bar.warning { background: #fff7ed; border-left: 4px solid #f97316; color: #9a3412; }
+    .alert-bar.info    { background: #fff7ed; border-left: 4px solid #fbbf24; color: #92400e; }
 
-    /* MAIN */
-    main { max-width: 1440px; margin: 0 auto; padding: 24px 32px; }
+    /* ── MAIN ── */
+    main { max-width: 1500px; margin: 0 auto; padding: 24px 32px; }
 
-    /* KPI GRID */
-    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
-    .kpi-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-top: 3px solid transparent; }
-    .kpi-card.blue   { border-top-color: #3b82f6; }
+    /* ── KPI GRID ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+    .kpi-card { background: #fff; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.07); border-top: 3px solid #f97316; transition: box-shadow .2s; }
+    .kpi-card:hover { box-shadow: 0 4px 16px rgba(249,115,22,.15); }
     .kpi-card.green  { border-top-color: #22c55e; }
-    .kpi-card.orange { border-top-color: #f97316; }
-    .kpi-card.purple { border-top-color: #a855f7; }
     .kpi-card.red    { border-top-color: #ef4444; }
-    .kpi-card.teal   { border-top-color: #14b8a6; }
-    .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: #64748b; font-weight: 700; margin-bottom: 6px; }
-    .kpi-value { font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.1; }
-    .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 5px; }
-    .kpi-chip { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 5px; }
-    .chip-up    { background: #dcfce7; color: #15803d; }
-    .chip-down  { background: #fee2e2; color: #b91c1c; }
-    .chip-warn  { background: #fef3c7; color: #b45309; }
-    .chip-gray  { background: #f1f5f9; color: #475569; }
+    .kpi-card.amber  { border-top-color: #fbbf24; }
+    .kpi-card.purple { border-top-color: #a855f7; }
+    .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: #94a3b8; font-weight: 700; margin-bottom: 6px; }
+    .kpi-value { font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1.1; }
+    .kpi-sub   { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+    .kpi-chip  { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 6px; }
+    .chip-up   { background: #dcfce7; color: #15803d; }
+    .chip-down { background: #fee2e2; color: #b91c1c; }
+    .chip-warn { background: #fff7ed; color: #c2410c; }
+    .chip-gray { background: #f1f5f9; color: #475569; }
+    .chip-orange { background: #fff7ed; color: #ea580c; }
 
-    /* TABS */
-    .tabs-bar { display: flex; gap: 2px; background: #fff; border-radius: 10px; padding: 5px; width: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; }
-    .tab-btn { padding: 8px 18px; border-radius: 7px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #64748b; transition: all .15s; white-space: nowrap; }
-    .tab-btn:hover:not(.active) { background: #f8fafc; color: #334155; }
-    .tab-btn.active { background: #0f172a; color: #fff; }
+    /* ── TABS ── */
+    .tabs-bar { display: flex; gap: 3px; background: #fff; border-radius: 12px; padding: 5px; width: fit-content; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 20px; }
+    .tab-btn { padding: 8px 18px; border-radius: 9px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #64748b; transition: all .15s; white-space: nowrap; }
+    .tab-btn:hover:not(.active) { background: #fff7ed; color: #ea580c; }
+    .tab-btn.active { background: #f97316; color: #fff; box-shadow: 0 2px 8px rgba(249,115,22,.35); }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
 
-    /* CARDS */
-    .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 16px; }
-    .card-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    /* ── CARDS ── */
+    .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 16px; }
+    .card-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
     .card-title-left { display: flex; align-items: center; gap: 8px; }
+    .card-sub { font-size: 12px; color: #94a3b8; }
 
-    /* GRID */
+    /* ── GRIDS ── */
     .grid-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
     .grid-3-1 { display: grid; grid-template-columns: 3fr 1fr; gap: 16px; }
-    .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
 
-    /* TABLES */
+    /* ── TABLES ── */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #64748b; font-weight: 700; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
     thead th.text-right { text-align: right; }
+    thead th.text-center { text-align: center; }
     tbody td { padding: 11px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: #fafbfd; }
-    .total-row td { background: #f8fafc !important; font-weight: 800; border-top: 2px solid #e2e8f0; font-size: 13px; }
-    .text-right { text-align: right; }
+    tbody tr:hover td { background: #fffbf7; }
+    .total-row td { background: #f8fafc !important; font-weight: 800; border-top: 2px solid #e2e8f0; }
+    .text-right  { text-align: right; }
     .text-center { text-align: center; }
-    .fw-bold { font-weight: 700; }
+    .fw-bold  { font-weight: 700; }
     .font-mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
 
-    /* BADGES */
+    /* ── BADGES ── */
     .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; gap: 4px; }
     .badge-assinado  { background: #dcfce7; color: #15803d; }
-    .badge-enviado   { background: #fef9c3; color: #854d0e; }
-    .badge-aguardando { background: #dbeafe; color: #1d4ed8; }
+    .badge-enviado   { background: #fff7ed; color: #c2410c; }
+    .badge-aguardando { background: #f1f5f9; color: #475569; }
     .badge-vencido   { background: #fee2e2; color: #b91c1c; }
-    .badge-futuro    { background: #f3e8ff; color: #7e22ce; }
+    .badge-ok        { background: #dcfce7; color: #15803d; }
+    .badge-baixo     { background: #fff7ed; color: #c2410c; }
+    .badge-critico   { background: #fee2e2; color: #b91c1c; }
 
-    /* TAGS (esportes) */
+    /* ── TAGS ── */
     .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; margin: 1px; white-space: nowrap; }
-    .tag-padel  { background: #dbeafe; color: #1e40af; }
-    .tag-areia  { background: #fef9c3; color: #854d0e; }
+    .tag-padel   { background: #dbeafe; color: #1e40af; }
+    .tag-areia   { background: #fff7ed; color: #c2410c; }
     .tag-society { background: #dcfce7; color: #15803d; }
 
-    /* PAYMENT CELLS */
+    /* ── PAYMENT CELLS ── */
     .pay-cell { border-radius: 5px; padding: 3px 7px; font-size: 12px; font-weight: 700; display: block; text-align: center; white-space: nowrap; }
     .pay-pago     { background: #dcfce7; color: #15803d; }
-    .pay-enviado  { background: #fef9c3; color: #854d0e; font-weight: 600; font-size: 11px; }
+    .pay-enviado  { background: #fff7ed; color: #c2410c; font-size: 11px; }
     .pay-pendente { background: #fee2e2; color: #b91c1c; font-size: 11px; }
     .pay-projetado { background: #f3f4f6; color: #6b7280; font-size: 11px; }
-    .pay-futuro   { background: #f3e8ff; color: #7e22ce; font-size: 11px; }
     .pay-vazio    { color: #d1d5db; font-size: 12px; text-align: center; display: block; }
 
-    /* RENEWAL ITEMS */
+    /* ── RENEWAL ITEMS ── */
     .renewal-list { display: flex; flex-direction: column; gap: 8px; }
-    .renewal-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; }
+    .renewal-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
     .renewal-item.expired { border-color: #fecaca; background: #fff5f5; }
     .renewal-item.urgent  { border-color: #fed7aa; background: #fffaf5; }
     .renewal-item.watch   { border-color: #fde68a; background: #fffef0; }
@@ -112,839 +123,871 @@
     .dot-green  { background: #22c55e; }
     .renewal-info { flex: 1; min-width: 0; }
     .renewal-clube { font-weight: 700; font-size: 14px; }
-    .renewal-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
-    .renewal-date-col { text-align: right; }
-    .renewal-date { font-size: 13px; font-weight: 700; }
-    .renewal-days { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .renewal-meta  { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-    /* OBS BOXES */
+    /* ── OBS BOXES ── */
     .obs-list { display: flex; flex-direction: column; gap: 8px; }
-    .obs { border-left: 3px solid #3b82f6; background: #eff6ff; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: #1e40af; }
-    .obs.warn  { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+    .obs { border-left: 3px solid #f97316; background: #fff7ed; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: #9a3412; }
     .obs.danger { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+    .obs.green  { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+    .obs.gray   { border-color: #94a3b8; background: #f8fafc; color: #475569; }
     .obs strong { font-weight: 700; }
 
-    /* CHART CONTAINERS */
+    /* ── CHART ── */
     .chart-container { position: relative; }
 
-    /* STATE PILL */
+    /* ── STATE PILLS ── */
     .state-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
     .state-PR { background: #dbeafe; color: #1e40af; }
     .state-SC { background: #dcfce7; color: #15803d; }
     .state-RS { background: #f3e8ff; color: #7e22ce; }
 
-    /* MRR highlight */
-    .mrr-diff { font-size: 11px; margin-left: 4px; }
-    .mrr-up   { color: #15803d; }
-    .mrr-down { color: #b91c1c; }
-
-    /* Anomaly row */
-    tr.anomaly td { background: #fffbeb !important; }
+    /* ── ANOMALY ── */
+    tr.anomaly    td { background: #fff7ed !important; }
     tr.expired-row td { background: #fef2f2 !important; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .8px; margin: 20px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    /* ── PROGRESS BAR ── */
+    .prog-bar { background: #f1f5f9; border-radius: 6px; height: 8px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 6px; background: #f97316; transition: width .4s; }
+    .prog-fill.green { background: #22c55e; }
+    .prog-fill.red   { background: #ef4444; }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAA3CAYAAADHao5rAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAARGVYSWZNTQAqAAAACAABh2kABAAAAAEAAAAaAAAAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAA3AAAAANJBmnYAAAHLaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA2LjAuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIj4KICAgICAgICAgPGV4aWY6Q29sb3JTcGFjZT4xPC9leGlmOkNvbG9yU3BhY2U+CiAgICAgICAgIDxleGlmOlBpeGVsWERpbWVuc2lvbj4zOTA8L2V4aWY6UGl4ZWxYRGltZW5zaW9uPgogICAgICAgICA8ZXhpZjpQaXhlbFlEaW1lbnNpb24+MTgwPC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CtcX68MAAA/OSURBVHgB7dxXqCVFEwDgXteccw67ZjHnHDCDijmnB9EHQVFRFPXBgKKgPoiiiIJiBBUxK5hzzjnnnHP236+xzt/OnXPPzNmzsl5vw7kz011VXV1VXVXdPXPHzD///H+m0TJiJTDFiB3Z6MCyBEYVPMINYVTBowoe4RIY4cMbncGjCh7hEhjhwxudwSNcwVO2Hd+ff7ZfNo8ZM6ZtN/8p+H5kSkBN5NpawWPHjm0lfEz88ccfqd9BtOrsXwhMLmRKTm1lRK69SmMF//7772nBBRdMG220US+auT2sCxO33HJL+vzzz/NAGiH/h4DIZ6mllkqrrrpqR25NFP3TTz+lm266Kf34449piim6R9rGCv7tt9/S0ksvnU477bRhxa/DTz/9NH3xxRfpzTffTB988EGaeuqph7iTsL4whCBqcOqivjrYqA/48jocbLWtDq8qqH5wgm4dbh3v5DD99NNn2ZpAfnPMMUeac84501RTTRXkhly//PLLdM8996QffvhhSFtZ0VjBkOqYDmIM4L333kuPPfZYuv3229Pjjz+ePv7442xhXFApPHRmnnnmNNdcc3UGoY6X8DPbv/3226zkhRZaKE033XS5m6+++ip98sknHeVH367wZ5tttkzTPX7eeeedTniYb7750kwzzVQ7BrBo+8ENA1t44YWzcZb9xP0vv/ySCPmbb775Gz/wKWyBBRYI0HzVx7vvvpvHVzZQ4hNPPJHlNeOMMyZ9rrXWWmnTTTdNyy67bJpnnnlK8M49ek1KKwV3I/j999+nJ598Ml100UVZuV9//XWacsops0uuWiEFEvauu+6a1l9//axodNX//PPPCa0rr7wy/yj2iCOOSIsvvngW4s0335xOP/30WqET+MYbb5z222+/zCYPctBBB2VjIXT166yzzhAFU+Z3332XnnnmmXT99dfnq1k1zTTTpKOOOiotssgiQ3B0QLmPPvpoxnn99dc7Bvzrr7+mFVZYIR177LEdxeuDweLno48+GhKqwviN/bnnnuvwst1226U99tgjLbHEElmeeWAt/0y0gjF+4403ZsG/8cYbWfjTTjttLRsEPcMMM6RDDz007b333h0BhLsOpBdffDFdccUV+XHFFVfMA/Twyiuv1ApbGxpm+0orreQxMbLSuISXaNMefcZsXW+99dK6666beSNkXkff48aNA577xb8SOAxq5ZVXTocffnj2LHAYKrxVVlklw5Z/8Pf+++8PUXDAUHQoW5g799xz07PPPpuNfI011vjbeAKn13WiFCzQX3vttenEE0/MMbebYoMJs2ybbbbJVklIBPb2229nqw7hga3OiMAnvOFK2W4mlaV0aZRPiYr8YPnll094p5jdd989HXnkkbmtxDHz8IVvrp77pNDNN988u1Pey7N2HqeujB8/Pj3wwAN1TUPq0PK79957s2xPPfXUtOaaa3YMYAhCl4q+FUwhOj/ppJOyuyKoXoV1brvtth13w80xDvGaYBRXXqEJvV79dWt/9dVX04EHHpgNjCu+4IILslsFv8wyy9TOlLvuuisdf/zxuU2IufTSS3O8Dxzy8EOPW1cYnJk477zz5ufFFlus4zlyRYM/DO/5559Pxx13XDr77LO7Gk83Ut3z624Yf9VLqFiVAZSusBuawVOaJCIKl37DDTekDz/8sPOTdYuJofCAHeSVJ9GnJNCslIxFiVkYz3GVrcKR5L300ks5tkeb8ePXGCNR0sZQL7744lzvedFFF20kK7BloWTJ61lnndUzay7x3PelYPFLjHzqqaeyxVaJdnsmhIgxYCRVnsMdxbWE6UZrYurxEX1VFUpJdaUJDrlYGcw+++yZhETv/vvvz+NUMW5CPKesbn3U9Rt1Jsc111yTHnrooahqdO1LwaxYpks4bQohjeTCJVseSSQVCn7rrbeyR/JsyWMpFwmeuqaF0fMIl1xySZJfNJVlXwq+77778iaGpVDb0pSxtnT/afi6cVCcOBttXPpnn33WceeUKx73o2DjE9/JXnhsOrn6UrDkqsxY2wg3Bt8GZ1LC4meQPJUZNEWYdfIKRayWg/SrYLOYVxCPJ4mCCULctCnQ7+wdpDAHpfi2PIGv4oir4qssPMprr72WJHS2bKMst9xyfSsYDcZBwUqVh1xZ+dPKxyJor9mWXhPilb7+lmBV2/7JZ8rggYzBtclsCBzw7kscz37Wx/aSFc+2Js26MkvnwkvctuPGsxyoqQdtrWCEbQD0o2CDmdQZchOBiWWSIWMw60IpcO0t1wlP4gSOm4UrnkaxcQJHBu2gQOHpLMN4Oq46Chdtr7pNohS4rnhGu6mbb6VgVmmABPRvLrYM7VYZD2GP+2s70pjsL9cJz3He0UcfnQU899xzd/bQCdthAVoMAD2Fl3NoQsFisEnh3iYJ46jbk86IPf7oh7E1nSitFWwALNUW48S4mh7jmKTNFLTbbrv9rQ+KevDBB/MZa924bPj7lcWGjDPZRx55JMvCRkZ4Ntkzb0CpNoMcJMwyyyxp1llnzZn0cHvSZR/V+zAkE819r9JawRiWSBhU2xKDb4s3aHhbpLZHo0iEGKxDEwlRnYLFU4cgMXPkIi+//HLefOCi1YuvUcAzALQo2I+CI5PmKfop+pGoNVEu+q0UHAw55rMX27Y0Zaot3bbwkp5TTjklozE6Cpa4UDwB1vHJIM4444xOeKJgMTZmqZ0mMzgKj2DJJJzpozyYB1fXR+B2uwodvI+TqvIgpBu8+r4UvPbaa2drtQxgkU2LQdXFt6b4g4LjLm2zxmykAPcxc+uEz+XCkZQpgcOjGZO4KLZHcULlTBhN7WJvFIqPvqOuyVVi5lhTP2J8k9KXgm257bzzzp1Z0KQjMJOLgimHYbr6NSkUQpl1Bk2BXrExu6Jw16XLjnrXcX/tScNr2j9Y8dtxJj7qjLDsI+77UjCmdtppp3TbbbflWNz0aM9SAqNRCCueS4vuNmiwrDhmWtCpPkf9P3U1rgmf4eaTJH16ttsXp2L4tkW5+uqrZ5Yss8Rju1LdxlrlHc3tt98+v85TbRvuuS8FI8hNeAWFGxLT6iy72rG4YVBRDNQhtmPDUsHiFTdaLZYXXocpDYqArDPLGFfFm9TPZtP4CYf5MQa8n3nmmZ23PMT41VZbLf/waxy8oMQrcIbjkVELi/vvv3/n/bTh4Mu2vhWMyGabbZYtkZLj6LCbRapnhTJVSZrC6p1xVuPJZZddls4777zsijLgX3/EnwsvvHCI1Xvp4PLLLy9B/9F7CpbZRnHIYG0sEaNA4wZD8c6LxXFLrqeffnrYiWHmw/WSxDHHHJPGFev16KvXdaIUzDWyTBkpi+WyY0Ffp2jwFMwat9pqq6xAOzvlSwAYvvvuuzsxpvQMtgL9qkVsIsByNpR44MWtKOV91NVdSxrdwoB+eRTvNkcxMyk3+gHDiLlsClbAR3gKvLiCN+uNVcw94IAD+lIuev8fdVBveSUEabvXWSj76quvTl6JsUwgFL8QvHu7OyeffHI+9rJc8OakepZqUIQgfhGagXqxgCt336288MILeVZYynj9RkEnYqBnhvXWhLNZRUhQ6oxQPX65RZ4kXlt1cB8KAxMFDfWM27pY4c3KYnx4Of/887PX0obnMCBj8yMDP0bg1VmbMRtssEHnlZ+SZtP7MU3/RweFbbnllvnAuRtx60jx0ItlDz/8cFY0hVorlgpyz02FcoOewbFq1k/ZhOf96TrBBo4r4eEPzThsR8cGRAiP0GKLNQyppFG9j74pR8GTON/NKEo+vYzIHVdhzchQasCgzZjhy8K5eq/3egO03PoEVxbLNm91Wr8Hj2V73Leaway6qqwg5MryvXCGUXGWcjHAhdvZCUYM3AAJra5oD+FU4/Nw8FWa4TnQYgTOZpWSfh09dQyDwUbphVPy2Q2WwUUJGDI1S71GHF80yLAZo7YSp8Q1lnLSRFv12ngGmxH2oL0H3KsE83DEZK4ztvN64f7X2nktOYj3thkk2YXXGU4WPBYv6QqnW2msYAQQilnRjWC1Hg5LrCvBmAFV78M61ceAo+8SHt0SNvop68r7gI/+4jnwoj/PAVOHr67kpxt8ies+6Je0eTa0AjZ46XU1gXrhtHLRiDXdAw3mDERshIshFhsJFOuLpCLWsQbLILio6A8NsZVb0i4mx+CCnjpxT3vQFALARezFu2fCdA0hwxEb1eHJPXrwteEXrh+etKvj9sF5BmcM7v3A4SMU5znGA1eb5+DFc9sS/A+HN3ZC4D9uOIBqG6JNfwYgeTj44IPzFw1i8vgJGwK+E3LsKJOUKdoV86WAtaMvHyRfQoHs2bHaIYcckpdVlkM+5bBsoGxttgO1+1iLgGXKaO6www55s9/rRfrbZJNN8ius4ht831IRqoQrvragGOe06El0vDM9bsLaE/8+HZF94+2www5LW2yxRcZ3+uRsWRxFG18+ZZEAOaHybZGxyEVs74LHj6PJDTfcMH9V4SsLhtJUrgFX1U3dc18v3dURqqvDiFnlwNtmu4FY4BOWWa2Ocq+77rq8q8Oy7VSdcMIJWUm293wvBMc7wbvssksnD2A4kirrRIoVj/bZZ5+sEB9t6Ytg0TBLwEsQbZZQvjaegpKXXHLJvI1IyIwIf3abZN6MzIaMJZ3l4NZbb51n65133pn23XffDBPjYSgUyQuY0ZaLMmdGIcl0AMG4POsXHzvuuGOG4T0mRZnkCqYESyeDNuMMzsymFIJn9X5mCgWb2WaRxIOQwNjIJyhChwvGd0SUB0Y9BVIIQaEnIQTDtXPR+lW/5557Zhp77bVXdqXgGRuB49WVMqwGGIFiuUJxjAYd2S5+9AkfP4wQrswbrKTSD09+smxn6JTqK0abPejzQLxP29DX1Bhau+imhEs4AqZgGwBh0QZsvWw9Z7BcFwFQlp2sW2+9Ne9be5OfYqwLbXpwrQRM6IR5xx135BcQKNtGgs9K1HspwXfKPpI2cyjPDpNZ6uVxSnXcKY5SFOPCi++AHOcxQJsj+Gag55xzTsbHJ2NkADZV7MMzoquuuirTEBLQ1pdwgW9u29gZON6MzaaQ1QX+GIB+GfOgS6ssup/OzbiYiayUgA1EvfinjXC1cZnioFmhHZx6dWAoSZtneOC1MyCwlBF44MMFu1fMsKCJD7jBn2e04aAnvKAH3n1svLhHT//4gY8ftIMnV3DoR9/wFf3oQz0cJfDyw4D/THIF45cQFIOO+ybPTWD6oYmuAlcZjqcMMOFPwPaCL/mp3gduWV9HP+oGcW21TOq3w1I45T16vZ6bwPSiUW2vjqPaXn1uC1/il/flWKr11T4G9Tx4pz8ozkbpDEQCowoeiBgnXyKjCp58dTMQzkYVPBAxTr5ERhU8+epmIJyNKnggYpx8iYwqePLVzUA4+x8ETinws2Om9wAAAABJRU5ErkJggg==" alt="Clippa" style="height:36px;display:block;"></div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <span class="logo-text">CLIPPA</span>
+    <span class="logo-sub">Dashboard 2026</span>
+  </div>
   <div class="header-right">
-    <span>Dashboard Financeiro 2026</span>
-    <span id="header-date"></span>
+    <span id="header-date" style="font-size:12px;color:#475569"></span>
+    <button class="btn-refresh" onclick="refreshData()">↻ Atualizar</button>
   </div>
 </header>
 
-<div class="alerts-section" id="alerts-section"></div>
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="color:#64748b;font-size:14px;font-weight:600">Carregando dados da planilha...</div>
+</div>
 
-<main>
-  <div class="kpi-grid" id="kpi-grid"></div>
+<div id="main-content">
+  <div class="alerts-section" id="alerts-section"></div>
+  <main>
+    <div class="kpi-grid" id="kpi-grid"></div>
 
-  <div class="tabs-bar">
-    <button class="tab-btn" onclick="switchTab('visao-geral')">📊 Visão Geral</button>
-    <button class="tab-btn active" onclick="switchTab('contratos')">📋 Contratos</button>
-    <button class="tab-btn" onclick="switchTab('recebimentos')">💰 Recebimentos</button>
-    <button class="tab-btn" onclick="switchTab('renovacoes')">🔄 Renovações</button>
-    <button class="tab-btn" onclick="switchTab('projecao')">📈 Projeção MRR</button>
-  </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('visao-geral')">📊 Visão Geral</button>
+      <button class="tab-btn" onclick="switchTab('contratos')">📋 Contratos</button>
+      <button class="tab-btn" onclick="switchTab('recebimentos')">💰 Recebimentos</button>
+      <button class="tab-btn" onclick="switchTab('renovacoes')">🔄 Renovações</button>
+      <button class="tab-btn" onclick="switchTab('projecao')">📈 Projeção MRR</button>
+      <button class="tab-btn" onclick="switchTab('estoque')">📦 Estoque</button>
+    </div>
 
-  <div id="visao-geral" class="tab-pane"></div>
-  <div id="contratos" class="tab-pane active"></div>
-  <div id="recebimentos" class="tab-pane"></div>
-  <div id="renovacoes" class="tab-pane"></div>
-  <div id="projecao" class="tab-pane"></div>
-</main>
+    <div id="visao-geral"  class="tab-pane active"></div>
+    <div id="contratos"    class="tab-pane"></div>
+    <div id="recebimentos" class="tab-pane"></div>
+    <div id="renovacoes"   class="tab-pane"></div>
+    <div id="projecao"     class="tab-pane"></div>
+    <div id="estoque"      class="tab-pane"></div>
+  </main>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// DADOS REAIS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CONFIGURAÇÃO
+// ═══════════════════════════════════════════
+const SHEET_ID         = '1HugA1FjzNBMlKNpr-j9pyqk_94rLSfkRIvQKQ1lTkrA';
+const GID_CONTRATOS    = '1516194585';
+const GID_RECEBIMENTOS = '1616219438';
+const GID_ESTOQUE      = '23632109';
 
-const TODAY = new Date('2026-04-06');
-
-const contratos = [
-  { id:1,  clube:'Central Arena',     mrr:150,  valorCam:150,    cameras:1, cidade:'Rio Negro',        estado:'PR', status:'Contrato assinado',  inicio:'2025-04-15', fim:'2026-03-15', contato:'William',       tel:'47 99229-1977', esportes:['Esportes de areia'], meses:11 },
-  { id:2,  clube:'Arena Maidl',       mrr:200,  valorCam:200,    cameras:1, cidade:'Rio Negro',        estado:'PR', status:'Contrato assinado',  inicio:'2025-04-15', fim:'2026-03-15', contato:'Rafael',        tel:'47 99787-9150', esportes:['Esportes de areia'], meses:11 },
-  { id:3,  clube:'Espaço Paiol',      mrr:190,  valorCam:95,     cameras:2, cidade:'Rio Negro',        estado:'PR', status:'Contrato assinado',  inicio:'2025-04-15', fim:'2026-03-15', contato:'João',          tel:'47 99670-1319', esportes:['Society'],           meses:11 },
-  { id:4,  clube:'Ravenna',           mrr:150,  valorCam:150,    cameras:1, cidade:'Papanduva',        estado:'SC', status:'Contrato assinado',  inicio:'2025-06-15', fim:'2026-05-15', contato:'Matheus',       tel:'47 99265-7520', esportes:['Esportes de areia'], meses:11 },
-  { id:5,  clube:'JR03',              mrr:400,  valorCam:100,    cameras:4, cidade:'Mafra',            estado:'SC', status:'Contrato enviado',   inicio:'2025-07-15', fim:'2026-06-15', contato:'Juliano',       tel:'47 99652-1601', esportes:['Esportes de areia','Society'], meses:11 },
-  { id:6,  clube:'RioMafra Padel',    mrr:1200, valorCam:300,    cameras:4, cidade:'Mafra',            estado:'SC', status:'Contrato assinado',  inicio:'2025-07-15', fim:'2027-07-15', contato:'Diego',         tel:'47 98818-0899', esportes:['Padel'],             meses:24 },
-  { id:7,  clube:'Resenha Society',   mrr:250,  valorCam:125,    cameras:2, cidade:'Rio Negro',        estado:'PR', status:'Contrato assinado',  inicio:'2025-07-15', fim:'2026-07-15', contato:'Célio',         tel:'47 99639-1063', esportes:['Society'],           meses:12 },
-  { id:8,  clube:'ATL Padel',         mrr:300,  valorCam:150,    cameras:2, cidade:'Xangrilá',         estado:'RS', status:'Contrato assinado',  inicio:'2025-08-15', fim:'2026-08-15', contato:'Ademir',        tel:'51 99499-7239', esportes:['Padel'],             meses:12 },
-  { id:9,  clube:'Coliseu',           mrr:600,  valorCam:100,    cameras:6, cidade:'São Bento do Sul', estado:'SC', status:'Esperando dados',    inicio:'2025-05-15', fim:'2027-05-15', contato:'Carlos',        tel:'47 98406-6601', esportes:['Esportes de areia','Padel'], meses:24 },
-  { id:10, clube:'Rio Negrense',      mrr:300,  valorCam:150,    cameras:2, cidade:'Rio Negro',        estado:'PR', status:'Contrato enviado',   inicio:'2025-12-01', fim:'2027-12-01', contato:'Alexandre',     tel:'47 99169-4885', esportes:['Society'],           meses:24 },
-  { id:11, clube:'TW Padel',          mrr:400,  valorCam:133.33, cameras:3, cidade:'Mafra',            estado:'SC', status:'Esperando dados',    inicio:'2025-11-04', fim:'2027-11-04', contato:'Wesley',        tel:'47 99902-9773', esportes:['Padel'],             meses:24 },
-  { id:12, clube:'ItaPadel',          mrr:300,  valorCam:150,    cameras:2, cidade:'Itaiópolis',       estado:'SC', status:'Esperando dados',    inicio:'2026-02-01', fim:'2027-02-01', contato:'Amauri',        tel:'47 99976-6106', esportes:['Padel'],             meses:24 },
-  { id:13, clube:'Arena Itaiópolis',  mrr:400,  valorCam:200,    cameras:2, cidade:'Itaiópolis',       estado:'SC', status:'Esperando dados',    inicio:'2026-02-01', fim:'2027-02-01', contato:'Joaceane',      tel:'47 98435-9308', esportes:['Padel'],             meses:24 },
-  { id:14, clube:'MF Beach Tennis',   mrr:150,  valorCam:150,    cameras:1, cidade:'Mafra',            estado:'SC', status:'Contrato enviado',   inicio:'2026-04-15', fim:'2027-03-15', contato:'Felipe',        tel:'47 99959-7171', esportes:['Esportes de areia'], meses:11 },
-  { id:15, clube:'CT Lucas Mendes',   mrr:390,  valorCam:130,    cameras:3, cidade:'Foz do Iguaçu',    estado:'PR', status:'Contrato assinado',  inicio:'2026-05-15', fim:'2027-04-15', contato:'Lucas Mendes',  tel:'45 99145-5478', esportes:['Esportes de areia'], meses:11 },
-  { id:16, clube:'Ravenna Paraguaí',  mrr:300,  valorCam:150,    cameras:2, cidade:'Foz do Iguaçu',    estado:'PR', status:'Contrato assinado',  inicio:'2026-05-15', fim:'2027-04-15', contato:'Eduardo Pit',   tel:'45 99129-8849', esportes:['Esportes de areia'], meses:11 },
-  { id:17, clube:'Rocket',            mrr:600,  valorCam:120,    cameras:5, cidade:'Passo Fundo',      estado:'RS', status:'Contrato assinado',  inicio:'2026-05-15', fim:'2027-04-15', contato:'Daniel Gobbato',tel:'54 99946-6552', esportes:['Esportes de areia'], meses:11 },
-];
-
-// Pagamentos reais (Jan-Mar confirmados, Abr = enviado/pendente, Mai+ = projetado por contrato)
-// null = não se aplica (fora do contrato), number = valor pago, 'enviado' = cobrança enviada, 'pendente' = deveria ter pago mas não há registro
-const PAG = {
-  'Central Arena':    { jan:150,  fev:150,  mar:150,  abr:'enviado',  mai:null,  jun:null,  jul:null,  ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'Arena Maidl':      { jan:200,  fev:200,  mar:200,  abr:'enviado',  mai:null,  jun:null,  jul:null,  ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'Espaço Paiol':     { jan:190,  fev:190,  mar:190,  abr:'enviado',  mai:null,  jun:null,  jul:null,  ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'Ravenna':          { jan:150,  fev:150,  mar:150,  abr:'enviado',  mai:150,   jun:null,  jul:null,  ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'JR03':             { jan:400,  fev:400,  mar:400,  abr:'enviado',  mai:400,   jun:400,   jul:null,  ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'RioMafra Padel':   { jan:1200, fev:1200, mar:1050, abr:'enviado',  mai:1200,  jun:1200,  jul:1200,  ago:1200,  set:1200,  out:1200,  nov:1200,  dez:1200 },
-  'Resenha Society':  { jan:250,  fev:250,  mar:250,  abr:'enviado',  mai:250,   jun:250,   jul:250,   ago:null,  set:null,  out:null,  nov:null,  dez:null  },
-  'ATL Padel':        { jan:300,  fev:300,  mar:300,  abr:'enviado',  mai:300,   jun:300,   jul:300,   ago:300,   set:null,  out:null,  nov:null,  dez:null  },
-  'Coliseu':          { jan:600,  fev:600,  mar:600,  abr:'pendente', mai:600,   jun:600,   jul:600,   ago:600,   set:600,   out:600,   nov:600,   dez:600  },
-  'Rio Negrense':     { jan:null, fev:null, mar:null, abr:'pendente', mai:300,   jun:300,   jul:300,   ago:300,   set:300,   out:300,   nov:300,   dez:300  },
-  'TW Padel':         { jan:null, fev:400,  mar:400,  abr:'pendente', mai:400,   jun:400,   jul:400,   ago:400,   set:400,   out:400,   nov:400,   dez:400  },
-  'ItaPadel':         { jan:null, fev:300,  mar:300,  abr:'pendente', mai:300,   jun:300,   jul:300,   ago:300,   set:300,   out:300,   nov:300,   dez:300  },
-  'Arena Itaiópolis': { jan:null, fev:300,  mar:300,  abr:'pendente', mai:400,   jun:400,   jul:400,   ago:400,   set:400,   out:400,   nov:400,   dez:400  },
-  'MF Beach Tennis':  { jan:null, fev:null, mar:null, abr:'enviado',  mai:150,   jun:150,   jul:150,   ago:150,   set:150,   out:150,   nov:150,   dez:null },
-  'CT Lucas Mendes':  { jan:null, fev:null, mar:null, abr:null,       mai:390,   jun:390,   jul:390,   ago:390,   set:390,   out:390,   nov:390,   dez:null },
-  'Ravenna Paraguaí': { jan:null, fev:null, mar:null, abr:null,       mai:300,   jun:300,   jul:300,   ago:300,   set:300,   out:300,   nov:300,   dez:null },
-  'Rocket':           { jan:null, fev:null, mar:null, abr:null,       mai:600,   jun:600,   jul:600,   ago:600,   set:600,   out:600,   nov:600,   dez:null },
-};
+// ═══════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════
+const TODAY = new Date();
+let contratos = [], PAG = {}, estoque = [];
 
 const MESES_KEYS  = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CSV UTILITIES
+// ═══════════════════════════════════════════
+function parseCSVLine(line) {
+  const result = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (line[i] === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else cur += line[i];
+  }
+  result.push(cur.trim()); return result;
+}
+
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  let headerIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (parseCSVLine(lines[i]).some(v => v.trim())) { headerIdx = i; break; }
+  }
+  const headers = parseCSVLine(lines[headerIdx]).map((h, i) => {
+    h = h.trim().replace(/^\uFEFF/, '');
+    return h || (i === 0 ? 'Status' : `_col${i}`);
+  });
+  return lines.slice(headerIdx + 1).map(line => {
+    const vals = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+    return obj;
+  });
+}
+
+function parseMoney(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace(/R\$\s*/g, '').replace(/,/g, '').trim()) || 0;
+}
+
+function parseDateBR(s) {
+  if (!s) return '';
+  const p = s.trim().split('/');
+  if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  return s.trim();
+}
+
+// ═══════════════════════════════════════════
+// FUZZY MATCHING
+// ═══════════════════════════════════════════
+function normStr(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+}
+function levenshtein(a, b) {
+  const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i||j));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+function findContract(csvName, list) {
+  const nc=normStr(csvName);
+  let f=list.find(c=>normStr(c.clube)===nc); if(f) return f;
+  f=list.find(c=>{const cn=normStr(c.clube);return cn.includes(nc)||nc.includes(cn);}); if(f) return f;
+  const sc=list.map(c=>({c,d:levenshtein(normStr(c.clube),nc)})).sort((a,b)=>a.d-b.d);
+  return (sc[0]&&sc[0].d<=3)?sc[0].c:null;
+}
+
+// ═══════════════════════════════════════════
+// DATA BUILDERS
+// ═══════════════════════════════════════════
+function buildContratosFromCSV(rows) {
+  return rows.filter(r=>r['Clube']&&normStr(r['Clube'])!=='total').map((row,i)=>{
+    const esportesRaw=row['Esportes']||'';
+    const esportes=esportesRaw.split(/[,/]/).map(e=>{
+      e=e.trim(); const el=e.toLowerCase();
+      if(el.includes('areia')||el.includes('beach')) return 'Esportes de areia';
+      if(el.includes('padel')) return 'Padel';
+      if(el.includes('society')||el.includes('futebol')) return 'Society';
+      return e||null;
+    }).filter(Boolean);
+    const s=(row['Status']||'').toLowerCase();
+    let status='Esperando dados';
+    if(s.includes('assinado')) status='Contrato assinado';
+    else if(s.includes('enviado')) status='Contrato enviado';
+    return {
+      id:i+1, clube:row['Clube'],
+      mrr:parseMoney(row['Valor mensal']),
+      valorCam:parseMoney(row['Valor por câmera']),
+      cameras:parseInt(row['Nº câmeras'])||1,
+      cidade:row['Cidade'], estado:row['Estado'], status,
+      inicio:parseDateBR(row['Início do contrato']),
+      fim:parseDateBR(row['Fim do contrato']),
+      contato:row['Nome cliente'], tel:row['Contato'],
+      esportes:esportes.length?esportes:['—'],
+      meses:parseInt(row['Duração do contrato'])||12,
+      solucao:row['Solução']||'',
+    };
+  });
+}
+
+function buildPAGFromCSV(rows, list) {
+  const pag={}, curMes=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
+  function getMonthValue(row,mesIdx) {
+    const nome=MESES_NOMES[mesIdx];
+    if(row[nome]!==undefined) return (row[nome]||'').trim();
+    const normNome=normStr(nome);
+    const key=Object.keys(row).find(k=>normStr(k)===normNome);
+    return key?(row[key]||'').trim():'';
+  }
+  rows.forEach(row=>{
+    const clubeCSV=row['Clube'];
+    if(!clubeCSV||normStr(clubeCSV)==='total') return;
+    const contrato=findContract(clubeCSV,list);
+    const key=contrato?contrato.clube:clubeCSV;
+    const inicioDate=contrato?parseDate(contrato.inicio):null;
+    const fimDate=contrato?parseDate(contrato.fim):null;
+    const mesValues={};
+    MESES_NOMES.forEach((nome,mesIdx)=>{
+      const cellValue=getMonthValue(row,mesIdx);
+      const mesKey=MESES_KEYS[mesIdx];
+      const mesDate=new Date(2026,mesIdx,1);
+      const inContract=inicioDate&&fimDate
+        ?mesDate>=new Date(inicioDate.getFullYear(),inicioDate.getMonth(),1)&&mesDate<=new Date(fimDate.getFullYear(),fimDate.getMonth(),1)
+        :true;
+      if(cellValue.startsWith('R$')) mesValues[mesKey]=parseMoney(cellValue);
+      else if(cellValue.toLowerCase()==='enviado') mesValues[mesKey]='enviado';
+      else if(!cellValue) {
+        if(!inContract) mesValues[mesKey]=null;
+        else if(mesDate<=curMes) mesValues[mesKey]='pendente';
+        else mesValues[mesKey]=contrato?contrato.mrr:null;
+      } else mesValues[mesKey]=null;
+    });
+    pag[key]=mesValues;
+  });
+  list.forEach(c=>{
+    if(pag[c.clube]) return;
+    const ini=parseDate(c.inicio),fim=parseDate(c.fim);
+    const mv={};
+    MESES_KEYS.forEach((k,mi)=>{
+      const md=new Date(2026,mi,1);
+      const inC=md>=new Date(ini.getFullYear(),ini.getMonth(),1)&&md<=new Date(fim.getFullYear(),fim.getMonth(),1);
+      mv[k]=!inC?null:md<=curMes?'pendente':c.mrr;
+    });
+    pag[c.clube]=mv;
+  });
+  return pag;
+}
+
+function buildEstoqueFromCSV(rows) {
+  return rows.filter(r=>r['Item']&&normStr(r['Item'])!=='total'&&normStr(r['Item'])!=='item').map(row=>({
+    item:     row['Item'],
+    categoria:row['Categoria']||'Outros',
+    qtde:     parseInt(row['Qtde'])||0,
+  }));
+}
+
+// ═══════════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════════
+async function loadData() {
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('main-content').style.display='none';
+  const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
+  try {
+    const [r1,r2,r3]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE)]);
+    const [t1,t2,t3]=await Promise.all([r1.text(),r2.text(),r3.text()]);
+    const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3);
+    console.log('[Clippa] Contratos CSV:',csvC.length,'| row[0]:',JSON.stringify(csvC[0]));
+    console.log('[Clippa] Receb CSV:',csvR.length,'| row[0]:',JSON.stringify(csvR[0]));
+    console.log('[Clippa] Estoque CSV:',csvE.length,'| row[0]:',JSON.stringify(csvE[0]));
+    contratos=buildContratosFromCSV(csvC);
+    PAG=buildPAGFromCSV(csvR.filter(r=>normStr(r['Clube']||'')!=='total'),contratos);
+    estoque=buildEstoqueFromCSV(csvE);
+    console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length);
+    document.getElementById('header-date').textContent=
+      'Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+
+      TODAY.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    builtTabs={};
+    ['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque'].forEach(id=>{
+      document.getElementById(id).innerHTML='';
+      document.getElementById(id).classList.remove('active');
+    });
+    document.getElementById('visao-geral').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    buildAlerts(); buildKPIs(); buildVisaoGeral(); builtTabs['visao-geral']=true;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('main-content').style.display='block';
+  } catch(err) {
+    document.getElementById('loading').innerHTML=`
+      <div style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <div style="font-weight:700;color:#0f172a;font-size:16px">Erro ao carregar dados</div>
+        <div style="font-size:12px;color:#64748b;margin-top:6px">${err.message}</div>
+        <button onclick="refreshData()" style="margin-top:16px;padding:8px 20px;background:#f97316;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">↻ Tentar novamente</button>
+      </div>`;
+  }
+}
+function refreshData(){ loadData(); }
+
+// ═══════════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+function fmt(v){ if(v===null||v===undefined) return '—'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtK(v){ return v>=1000?'R$ '+(v/1000).toFixed(1).replace('.',',')+' k':fmt(v); }
+function parseDate(s){ if(!s) return new Date(); const[y,m,d]=s.split('-'); return new Date(+y,+m-1,+d); }
+function diffDays(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 
-function fmt(v) {
-  if (v === null || v === undefined) return '—';
-  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-function fmtK(v) {
-  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'k';
-  return fmt(v);
-}
-function parseDate(s) { const [y,m,d] = s.split('-'); return new Date(y,m-1,d); }
-function diffDays(a, b) { return Math.round((b-a)/(1000*60*60*24)); }
-function addMonths(d, n) { const r = new Date(d); r.setMonth(r.getMonth()+n); return r; }
-
-function getMRRStatus(c) {
-  const inicio = parseDate(c.inicio);
-  if (inicio > TODAY) return 'futuro';
-  // Considera ativo se ainda há cobrança registrada neste mês (mesmo com contrato vencido)
-  const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
-  const fim = parseDate(c.fim);
-  if (fim < TODAY && !pagAbr) return 'vencido';
+function getMRRStatus(c){
+  const inicio=parseDate(c.inicio);
+  if(inicio>TODAY) return 'futuro';
+  const curKey=MESES_KEYS[TODAY.getMonth()];
+  const pagAtual=PAG[c.clube]&&PAG[c.clube][curKey];
+  const fim=parseDate(c.fim);
+  if(fim<TODAY&&!pagAtual) return 'vencido';
   return 'ativo';
 }
 
-function getContractRenewalClass(c) {
-  const fim = parseDate(c.fim);
-  const days = diffDays(TODAY, fim);
-  if (days < 0)   return 'expired';
-  if (days <= 60)  return 'urgent';
-  if (days <= 120) return 'watch';
-  return 'ok';
+function esporteTags(esps){ return esps.map(e=>{let cls='tag-areia';if((e||'').includes('Padel'))cls='tag-padel';else if((e||'').includes('Society'))cls='tag-society';return`<span class="tag ${cls}">${e}</span>`;}).join(' '); }
+function statusBadge(s){ if(s==='Contrato assinado')return`<span class="badge badge-assinado">✓ Assinado</span>`;if(s==='Contrato enviado')return`<span class="badge badge-enviado">→ Enviado</span>`;return`<span class="badge badge-aguardando">⏳ Aguardando</span>`; }
+function getMRRStatusBadge(c){ const st=getMRRStatus(c);if(st==='vencido')return`<span class="badge badge-vencido">⚠ Vencido</span>`;if(st==='futuro')return`<span class="badge badge-aguardando">🕐 Futuro</span>`;return`<span class="badge badge-assinado">● Ativo</span>`; }
+
+function calcMesMRR(k){ let t=0; contratos.forEach(c=>{const v=PAG[c.clube]&&PAG[c.clube][k];if(typeof v==='number')t+=v;}); return t; }
+function calcMesEsperado(k){ let t=0; contratos.forEach(c=>{const v=PAG[c.clube]&&PAG[c.clube][k];if(v!==null&&v!==undefined)t+=(typeof v==='number'?v:c.mrr);}); return t; }
+
+// ═══════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════
+function buildAlerts(){
+  const curKey=MESES_KEYS[TODAY.getMonth()]; let html='';
+  const precisamRenovar=contratos.filter(c=>parseDate(c.fim)<TODAY&&PAG[c.clube]&&PAG[c.clube][curKey]);
+  if(precisamRenovar.length) html+=`<div class="alert-bar warning">⚠️ ${precisamRenovar.length} contrato(s) com data vencida mas ainda ativo(s): <strong>${precisamRenovar.map(c=>c.clube).join(', ')}</strong> — renovar documento</div>`;
+  const pendentes=contratos.filter(c=>(PAG[c.clube]||{})[curKey]==='pendente');
+  if(pendentes.length) html+=`<div class="alert-bar danger">🔴 Pagamento de ${MESES_LABEL[TODAY.getMonth()]} pendente: <strong>${pendentes.map(c=>c.clube).join(', ')}</strong></div>`;
+  const estoqueAlerta=estoque.filter(e=>e.qtde<=2);
+  if(estoqueAlerta.length) html+=`<div class="alert-bar info">📦 ${estoqueAlerta.length} item(ns) em estoque crítico/baixo: <strong>${estoqueAlerta.map(e=>e.item).join(', ')}</strong></div>`;
+  document.getElementById('alerts-section').innerHTML=html;
 }
 
-function esporteTags(esps) {
-  return esps.map(e => {
-    let cls = 'tag-areia';
-    if (e.includes('Padel')) cls = 'tag-padel';
-    else if (e.includes('Society')) cls = 'tag-society';
-    return `<span class="tag ${cls}">${e}</span>`;
-  }).join(' ');
-}
+// ═══════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════
+function buildKPIs(){
+  const curKey=MESES_KEYS[TODAY.getMonth()];
+  const prevKey=MESES_KEYS[Math.max(TODAY.getMonth()-1,0)];
+  const nextKey=MESES_KEYS[Math.min(TODAY.getMonth()+1,11)];
+  const ativos=contratos.filter(c=>getMRRStatus(c)==='ativo');
+  const futuros=contratos.filter(c=>getMRRStatus(c)==='futuro');
+  const mrrAtual=calcMesEsperado(curKey);
+  const mrrPrev=calcMesMRR(prevKey);
+  const mrrProx=calcMesEsperado(nextKey);
+  const activeCams=ativos.reduce((s,c)=>s+c.cameras,0);
+  // Taxa de coleta: meses passados confirmados/esperados
+  let totalConf=0, totalEsp=0;
+  MESES_KEYS.slice(0,TODAY.getMonth()).forEach(k=>{ totalConf+=calcMesMRR(k); totalEsp+=calcMesEsperado(k); });
+  const taxaColeta=totalEsp>0?Math.round((totalConf/totalEsp)*100):100;
+  // Contratos vencendo em 60d
+  const vencendo60=contratos.filter(c=>{ const d=diffDays(TODAY,parseDate(c.fim)); return d>=0&&d<=60; });
+  const mrrRisco=vencendo60.reduce((s,c)=>s+c.mrr,0);
 
-function statusBadge(s) {
-  if (s === 'Contrato assinado') return `<span class="badge badge-assinado">✓ Assinado</span>`;
-  if (s === 'Contrato enviado')  return `<span class="badge badge-enviado">→ Enviado</span>`;
-  if (s === 'Esperando dados')   return `<span class="badge badge-aguardando">⏳ Aguardando</span>`;
-  return `<span class="badge">${s}</span>`;
-}
-
-function getMRRStatusBadge(c) {
-  const st = getMRRStatus(c);
-  if (st === 'vencido') return `<span class="badge badge-vencido">⚠ Vencido</span>`;
-  if (st === 'futuro')  return `<span class="badge" style="background:#f3e8ff;color:#7e22ce;">🕐 Futuro</span>`;
-  return `<span class="badge badge-assinado">● Ativo</span>`;
-}
-
-// Calcular MRR real por mês
-function calcMesMRR(mesKey) {
-  let total = 0;
-  contratos.forEach(c => {
-    const v = PAG[c.clube][mesKey];
-    if (typeof v === 'number') total += v;
-  });
-  return total;
-}
-
-function calcMesEsperado(mesKey) {
-  let total = 0;
-  contratos.forEach(c => {
-    const v = PAG[c.clube][mesKey];
-    if (v !== null) total += (typeof v === 'number' ? v : c.mrr);
-  });
-  return total;
-}
-
-// ═══════════════════════════════════════════════════════
-// INICIALIZAR
-// ═══════════════════════════════════════════════════════
-
-document.getElementById('header-date').textContent =
-  'Atualizado: ' + TODAY.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
-
-// ── ALERTS ──
-function buildAlerts() {
-  const vencidos = contratos.filter(c => getMRRStatus(c) === 'vencido');
-  const semPagamento = contratos.filter(c => {
-    const p = PAG[c.clube];
-    return getMRRStatus(c) === 'ativo' &&
-      p.jan === null && p.fev === null && p.mar === null;
-  });
-  const anomalia = contratos.find(c => c.clube === 'RioMafra Padel');
-
-  let html = '';
-  // Contratos com data vencida mas ainda cobrando (precisam renovar o documento)
-  const precisamRenovar = contratos.filter(c => {
-    const fim = parseDate(c.fim);
-    const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
-    return fim < TODAY && pagAbr;
-  });
-  if (precisamRenovar.length) {
-    const nomes = precisamRenovar.map(c => `<strong>${c.clube}</strong>`).join(', ');
-    html += `<div class="alert-bar warning"><span class="alert-icon">⚠️</span> ${precisamRenovar.length} contrato(s) com data vencida mas ainda ativos: ${nomes} — <strong>renovar documento do contrato</strong></div>`;
-  }
-  if (semPagamento.length) {
-    const nomes = semPagamento.map(c => `<strong>${c.clube}</strong>`).join(', ');
-    html += `<div class="alert-bar warning"><span class="alert-icon">⚠️</span> Clientes com contrato ativo mas <strong>sem pagamento registrado</strong> em nenhum mês: ${nomes}</div>`;
-  }
-
-  document.getElementById('alerts-section').innerHTML = html;
-}
-buildAlerts();
-
-// ── KPIs ──
-function buildKPIs() {
-  const precisamRenovar = contratos.filter(c => {
-    const fim = parseDate(c.fim);
-    const pagAbr = PAG[c.clube] && PAG[c.clube]['abr'];
-    return fim < TODAY && pagAbr;
-  });
-  const ativos = contratos.filter(c => getMRRStatus(c) === 'ativo');
-  const mrrAtual = calcMesEsperado('abr'); // esperado para abril
-  const mrrMarco = calcMesMRR('mar');
-  const mrrMaio = calcMesEsperado('mai');
-  const totalCameras = contratos.reduce((s,c) => s + c.cameras, 0);
-  const activeCameras = ativos.reduce((s,c) => s + c.cameras, 0);
-  const ticketMedio = ativos.length ? Math.round(mrrAtual / ativos.length) : 0;
-  const vencidos = contratos.filter(c => getMRRStatus(c) === 'vencido');
-  const mrrVencido = vencidos.reduce((s,c) => s + c.mrr, 0);
-
-  const kpis = [
-    { label:'MRR Esperado Abr', value: fmt(mrrAtual), sub:`Mar confirmado: ${fmt(mrrMarco)}`, cls:'blue',
-      chip: mrrAtual > mrrMarco ? `↑ +${fmt(mrrAtual-mrrMarco)} vs Mar` : `↓ ${fmt(mrrAtual-mrrMarco)} vs Mar`,
-      chipCls: mrrAtual >= mrrMarco ? 'chip-up' : 'chip-down' },
-    { label:'MRR Projetado Mai', value: fmt(mrrMaio), sub:'+3 novos clientes entram', cls:'green',
-      chip:`+${fmt(mrrMaio-mrrAtual)} vs Abr`, chipCls:'chip-up' },
-    { label:'Clientes Ativos', value: ativos.length, sub:`de ${contratos.length} total`, cls:'purple',
-      chip:`${contratos.filter(c=>getMRRStatus(c)==='futuro').length} futuros`, chipCls:'chip-gray' },
-    { label:'Câmeras Ativas', value: activeCameras, sub:`de ${totalCameras} total`, cls:'teal',
-      chip:`${(mrrAtual/activeCameras).toFixed(0)}/câm`, chipCls:'chip-gray' },
-    { label:'Contratos s/ Renovação', value: precisamRenovar.length, sub:`Central Arena, Maidl, Paiol`, cls:'orange',
-      chip:'Renovar documento', chipCls:'chip-warn' },
+  const kpis=[
+    { label:'MRR '+MESES_LABEL[TODAY.getMonth()], value:fmtK(mrrAtual), sub:`${MESES_LABEL[Math.max(TODAY.getMonth()-1,0)]} confirmado: ${fmtK(mrrPrev)}`, chip: mrrAtual>=mrrPrev?`↑ +${fmtK(mrrAtual-mrrPrev)}`:`↓ ${fmtK(mrrAtual-mrrPrev)}`, chipCls:mrrAtual>=mrrPrev?'chip-up':'chip-down' },
+    { label:'MRR '+MESES_LABEL[Math.min(TODAY.getMonth()+1,11)]+' (proj.)', value:fmtK(mrrProx), sub:'Baseado nos contratos vigentes', chip:`+${fmtK(mrrProx-mrrAtual)} vs atual`, chipCls:mrrProx>=mrrAtual?'chip-up':'chip-down', cls:'green' },
+    { label:'Clientes Ativos', value:ativos.length, sub:`de ${contratos.length} total · ${futuros.length} futuros`, chip:`${futuros.length} a entrar`, chipCls:'chip-gray', cls:'purple' },
+    { label:'Câmeras Ativas', value:activeCams, sub:`${ativos.length>0?(mrrAtual/activeCams).toFixed(0):0} R$/câm`, chip:`${contratos.reduce((s,c)=>s+c.cameras,0)} total instaladas`, chipCls:'chip-gray' },
+    { label:'Taxa de Coleta', value:taxaColeta+'%', sub:'Pagamentos confirmados ÷ esperados', chip:taxaColeta>=80?'Saudável':taxaColeta>=60?'Atenção':'Crítico', chipCls:taxaColeta>=80?'chip-up':taxaColeta>=60?'chip-warn':'chip-down', cls:taxaColeta>=80?'green':taxaColeta>=60?'amber':'red' },
+    { label:'MRR em Risco 60d', value:fmtK(mrrRisco), sub:`${vencendo60.length} contratos vencendo`, chip:vencendo60.length?'Renovar urgente':'Tudo OK', chipCls:vencendo60.length?'chip-warn':'chip-up', cls:vencendo60.length?'amber':'green' },
   ];
-
-  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.cls}">
+  document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`
+    <div class="kpi-card ${k.cls||''}">
       <div class="kpi-label">${k.label}</div>
       <div class="kpi-value">${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
       <span class="kpi-chip ${k.chipCls}">${k.chip}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-buildKPIs();
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // TAB: VISÃO GERAL
-// ═══════════════════════════════════════════════════════
-
-function buildVisaoGeral() {
-  const el = document.getElementById('visao-geral');
-
-  // MRR por mês (confirmado vs esperado)
-  const mrrReal = MESES_KEYS.map(k => {
-    const v = calcMesMRR(k);
-    return v > 0 ? v : null;
-  });
-  const mrrEsperado = MESES_KEYS.map(k => calcMesEsperado(k));
+// ═══════════════════════════════════════════
+function buildVisaoGeral(){
+  const el=document.getElementById('visao-geral');
+  const curMes=TODAY.getMonth();
+  const mrrReal=MESES_KEYS.map(k=>{const v=calcMesMRR(k);return v>0?v:null;});
+  const mrrEsp=MESES_KEYS.map(k=>calcMesEsperado(k));
 
   // Por esporte
-  const esportes = {};
-  contratos.filter(c => getMRRStatus(c) === 'ativo').forEach(c => {
-    c.esportes.forEach(e => {
-      esportes[e] = (esportes[e] || 0) + c.mrr;
-    });
-  });
+  const esportes={};
+  contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>c.esportes.forEach(e=>{esportes[e]=(esportes[e]||0)+c.mrr;}));
 
   // Por estado
-  const estados = {};
-  contratos.filter(c => getMRRStatus(c) === 'ativo').forEach(c => {
-    estados[c.estado] = (estados[c.estado] || 0) + c.mrr;
-  });
+  const estados={};
+  contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>{estados[c.estado]=(estados[c.estado]||0)+c.mrr;});
 
-  // Top clientes
-  const topClientes = [...contratos]
-    .filter(c => getMRRStatus(c) !== 'futuro')
-    .sort((a,b) => b.mrr - a.mrr)
-    .slice(0,5);
+  // Concentração: top 5 clientes
+  const topAll=[...contratos].filter(c=>getMRRStatus(c)!=='futuro').sort((a,b)=>b.mrr-a.mrr);
+  const top5=topAll.slice(0,5);
+  const mrrTotal=topAll.reduce((s,c)=>s+c.mrr,0);
+  const top5MRR=top5.reduce((s,c)=>s+c.mrr,0);
+  const outrosMRR=mrrTotal-top5MRR;
 
-  el.innerHTML = `
+  // Observações
+  const curKey=MESES_KEYS[curMes];
+  const semPag=contratos.filter(c=>getMRRStatus(c)==='ativo'&&MESES_KEYS.every(k=>typeof((PAG[c.clube]||{})[k])!=='number'));
+  const pendAtual=contratos.filter(c=>(PAG[c.clube]||{})[curKey]==='pendente');
+  const precisamRen=contratos.filter(c=>parseDate(c.fim)<TODAY&&(PAG[c.clube]||{})[curKey]);
+
+  const obs=[];
+  if(semPag.length) obs.push(`<div class="obs danger"><strong>${semPag.map(c=>c.clube).join(', ')}</strong>: ativo sem nenhum pagamento confirmado — verificar implantação.</div>`);
+  if(pendAtual.length) obs.push(`<div class="obs"><strong>${pendAtual.map(c=>c.clube).join(', ')}</strong>: pagamento de ${MESES_LABEL[curMes]} pendente.</div>`);
+  if(precisamRen.length) obs.push(`<div class="obs"><strong>${precisamRen.map(c=>c.clube).join(', ')}</strong>: contrato vencido mas ainda ativo — renovar documento.</div>`);
+  const mrrRisco60=contratos.filter(c=>{const d=diffDays(TODAY,parseDate(c.fim));return d>=0&&d<=60;}).reduce((s,c)=>s+c.mrr,0);
+  if(mrrRisco60>0) obs.push(`<div class="obs"><strong>R$ ${mrrRisco60.toLocaleString('pt-BR')} em risco</strong> em contratos vencendo nos próximos 60 dias.</div>`);
+  obs.push(`<div class="obs green"><strong>Top 3 clientes</strong> representam ${mrrTotal>0?Math.round((topAll.slice(0,3).reduce((s,c)=>s+c.mrr,0)/mrrTotal)*100):0}% do MRR — atenção à concentração.</div>`);
+  obs.push(`<div class="obs green"><strong>${MESES_LABEL[Math.min(curMes+1,11)]} projetado: ${fmtK(calcMesEsperado(MESES_KEYS[Math.min(curMes+1,11)]))}</strong> com base nos contratos vigentes.</div>`);
+
+  el.innerHTML=`
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title"><div class="card-title-left">📈 Evolução do MRR 2026</div></div>
-        <div class="chart-container" style="height:220px">
-          <canvas id="chart-mrr"></canvas>
-        </div>
+        <div class="card-title"><div class="card-title-left">📈 Evolução do MRR 2026</div><span class="card-sub">Confirmado vs Esperado vs Meta</span></div>
+        <div class="chart-container" style="height:230px"><canvas id="chart-mrr"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title"><div class="card-title-left">🎾 MRR por Esporte</div></div>
-        <div class="chart-container" style="height:220px">
-          <canvas id="chart-esporte"></canvas>
-        </div>
+        <div class="card-title"><div class="card-title-left">🎾 MRR por Esporte</div><span class="card-sub">Clientes ativos</span></div>
+        <div class="chart-container" style="height:230px"><canvas id="chart-esporte"></canvas></div>
       </div>
     </div>
-
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">🗺️ MRR por Estado</div><span class="card-sub">Distribuição geográfica</span></div>
+        <div class="chart-container" style="height:180px"><canvas id="chart-estado"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">🏆 Concentração de Receita</div><span class="card-sub">Top 5 vs restante</span></div>
+        <div class="chart-container" style="height:180px"><canvas id="chart-concentracao"></canvas></div>
+      </div>
+    </div>
     <div class="grid-2">
-      <div class="card mb-0">
-        <div class="card-title"><div class="card-title-left">🏆 Top Clientes por MRR</div></div>
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">🏅 Top Clientes por MRR</div></div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr><th>#</th><th>Clube</th><th>Estado</th><th>Câmeras</th><th class="text-right">MRR</th><th>Contrato</th></tr>
-            </thead>
+            <thead><tr><th>#</th><th>Clube</th><th>UF</th><th class="text-right">MRR</th><th class="text-right">% Total</th><th>Status</th></tr></thead>
             <tbody>
-              ${topClientes.map((c,i) => `
-                <tr>
-                  <td class="fw-bold" style="color:#94a3b8">${i+1}</td>
-                  <td class="fw-bold">${c.clube}</td>
-                  <td><span class="state-pill state-${c.estado}">${c.estado}</span></td>
-                  <td class="text-center">${c.cameras}</td>
-                  <td class="text-right fw-bold font-mono">${fmt(c.mrr)}</td>
-                  <td>${getMRRStatusBadge(c)}</td>
-                </tr>
-              `).join('')}
+              ${top5.map((c,i)=>`<tr>
+                <td class="fw-bold" style="color:#f97316">${i+1}</td>
+                <td class="fw-bold">${c.clube}</td>
+                <td><span class="state-pill state-${c.estado}">${c.estado}</span></td>
+                <td class="text-right fw-bold font-mono">${fmt(c.mrr)}</td>
+                <td class="text-right" style="color:#64748b;font-size:12px">${mrrTotal>0?Math.round((c.mrr/mrrTotal)*100):0}%</td>
+                <td>${getMRRStatusBadge(c)}</td>
+              </tr>`).join('')}
             </tbody>
           </table>
         </div>
       </div>
-      <div class="card mb-0">
+      <div class="card">
         <div class="card-title"><div class="card-title-left">⚠️ Pontos de Atenção</div></div>
-        <div class="obs-list">
-          <div class="obs warn"><strong>3 contratos com documento vencido</strong> (Central Arena, Arena Maidl, Espaço Paiol) — clientes ainda ativos e pagando, mas precisam assinar novo contrato.</div>
-          <div class="obs danger"><strong>Rio Negrense</strong>: contrato ativo desde Dez/25 mas zero pagamentos registrados. Verificar implantação/ativação.</div>
-<div class="obs warn"><strong>Coliseu, TW Padel, ItaPadel, Arena Itaiópolis</strong>: pagamento de Abril não marcado como enviado. Cobranças pendentes?</div>
-          <div class="obs" style="border-color:#22c55e;background:#f0fdf4;color:#15803d;"><strong>Maio projetado: ${fmt(calcMesEsperado('mai'))}</strong> (+R$1.290 com 3 novos clientes)</div>
-        </div>
+        <div class="obs-list">${obs.join('')}</div>
       </div>
     </div>
   `;
 
-  // Render charts after DOM
-  setTimeout(() => {
+  setTimeout(()=>{
     // MRR Chart
-    new Chart(document.getElementById('chart-mrr'), {
-      type: 'bar',
-      data: {
-        labels: MESES_LABEL,
-        datasets: [
-          {
-            label: 'Confirmado (Pago)',
-            data: mrrReal,
-            backgroundColor: '#22c55e',
-            borderRadius: 5,
-          },
-          {
-            label: 'Esperado/Projetado',
-            data: mrrEsperado,
-            backgroundColor: (ctx) => {
-              const i = ctx.dataIndex;
-              if (i < 3) return 'transparent'; // já mostrado no confirmado
-              if (i === 3) return '#fbbf24'; // abril (enviado)
-              return '#bfdbfe'; // futuro
-            },
-            borderRadius: 5,
-          }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11 } } } },
-        scales: {
-          x: { stacked: false, grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              font: { size: 11 },
-              callback: v => 'R$' + (v/1000).toFixed(1) + 'k'
-            }
-          }
-        }
-      }
-    });
+    new Chart(document.getElementById('chart-mrr'),{type:'bar',data:{
+      labels:MESES_LABEL,
+      datasets:[
+        {label:'Confirmado',data:mrrReal,backgroundColor:'#f97316',borderRadius:5},
+        {label:'Esperado/Projetado',data:mrrEsp,backgroundColor:ctx=>{const i=ctx.dataIndex;if(i<curMes)return'transparent';if(i===curMes)return'#fbbf24';return'#fed7aa';},borderRadius:5},
+        {label:'Meta',data:[5000,6800,8600,10400,12200,14000,15800,17600,19400,21200,23000,25000],type:'line',borderColor:'#0f172a',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:false,grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}}}}});
 
     // Esporte Chart
-    new Chart(document.getElementById('chart-esporte'), {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(esportes),
-        datasets: [{
-          data: Object.values(esportes),
-          backgroundColor: ['#3b82f6','#fbbf24','#22c55e','#a855f7'],
-          borderWidth: 2, borderColor: '#fff'
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}`
-            }
-          }
-        }
-      }
-    });
-  }, 50);
+    new Chart(document.getElementById('chart-esporte'),{type:'doughnut',data:{
+      labels:Object.keys(esportes),
+      datasets:[{data:Object.values(esportes),backgroundColor:['#f97316','#ea580c','#fbbf24','#fed7aa'],borderWidth:2,borderColor:'#fff'}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}`}}}}});
+
+    // Estado Chart
+    const estadoLabels=Object.keys(estados), estadoVals=Object.values(estados);
+    new Chart(document.getElementById('chart-estado'),{type:'bar',data:{
+      labels:estadoLabels,
+      datasets:[{label:'MRR',data:estadoVals,backgroundColor:['#f97316','#ea580c','#fbbf24'].slice(0,estadoLabels.length),borderRadius:8}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}`}}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}},y:{grid:{display:false},ticks:{font:{size:12,weight:'700'}}}}}});
+
+    // Concentração Chart
+    const concLabels=[...top5.map(c=>c.clube.split(' ')[0]+(top5.length>1?'...':'')),outrosMRR>0?'Outros':''].filter(Boolean);
+    const concVals=[...top5.map(c=>c.mrr),outrosMRR>0?outrosMRR:null].filter(v=>v!==null&&v>0);
+    new Chart(document.getElementById('chart-concentracao'),{type:'doughnut',data:{
+      labels:[...top5.map(c=>c.clube),outrosMRR>0?'Outros':''].filter(Boolean),
+      datasets:[{data:concVals,backgroundColor:['#0f172a','#f97316','#ea580c','#fbbf24','#fed7aa','#e2e8f0'],borderWidth:2,borderColor:'#fff'}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')} (${mrrTotal>0?Math.round((ctx.raw/mrrTotal)*100):0}%)`}}}}});
+  },50);
 }
-buildContratos();
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // TAB: CONTRATOS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+function buildContratos(){
+  const el=document.getElementById('contratos');
+  const totalMRR=contratos.reduce((s,c)=>s+c.mrr,0);
+  const totalCams=contratos.reduce((s,c)=>s+c.cameras,0);
+  const totalContrato=contratos.reduce((s,c)=>s+(c.mrr*c.meses),0);
 
-function buildContratos() {
-  const el = document.getElementById('contratos');
-  const totalMRR = contratos.reduce((s,c) => s + c.mrr, 0);
-  const totalCams = contratos.reduce((s,c) => s + c.cameras, 0);
-  const totalContrato = contratos.reduce((s,c) => s + (c.mrr * c.meses), 0);
-
-  const rows = contratos.map(c => {
-    const fim = parseDate(c.fim);
-    const inicio = parseDate(c.inicio);
-    const days = diffDays(TODAY, fim);
-    const mrrSt = getMRRStatus(c);
-    let renClass = '';
-    let diasTxt = '';
-
-    if (mrrSt === 'vencido') {
-      renClass = 'expired-row';
-      diasTxt = `<span style="color:#b91c1c;font-weight:700;font-size:11px">Vencido há ${Math.abs(days)}d</span>`;
-    } else if (mrrSt === 'futuro') {
-      renClass = '';
-      diasTxt = `<span style="color:#7e22ce;font-size:11px">Inicia em ${diffDays(TODAY,inicio)}d</span>`;
-    } else if (days <= 60) {
-      renClass = 'anomaly';
-      diasTxt = `<span style="color:#c2410c;font-weight:700;font-size:11px">⚠ ${days}d restantes</span>`;
-    } else {
-      diasTxt = `<span style="color:#64748b;font-size:11px">${days}d restantes</span>`;
-    }
-
-    return `
-      <tr class="${renClass}">
-        <td class="fw-bold">${c.clube}</td>
-        <td>${statusBadge(c.status)}</td>
-        <td>${getMRRStatusBadge(c)}</td>
-        <td class="text-right fw-bold font-mono">${fmt(c.mrr)}</td>
-        <td class="text-center">${c.cameras}</td>
-        <td class="text-right font-mono" style="color:#64748b;font-size:12px">${fmt(c.valorCam)}</td>
-        <td><span class="state-pill state-${c.estado}">${c.estado}</span> ${c.cidade}</td>
-        <td>${esporteTags(c.esportes)}</td>
-        <td style="font-size:12px;color:#475569">${c.contato}<br><span style="color:#94a3b8">${c.tel}</span></td>
-        <td style="font-size:11px;color:#475569">${parseDate(c.inicio).toLocaleDateString('pt-BR')}</td>
-        <td style="font-size:11px">${parseDate(c.fim).toLocaleDateString('pt-BR')}<br>${diasTxt}</td>
-        <td class="text-center" style="font-size:12px;color:#64748b">${c.meses}m</td>
-        <td class="text-right font-mono" style="font-size:12px;color:#475569">${fmt(c.mrr * c.meses)}</td>
-      </tr>
-    `;
+  const rows=contratos.map(c=>{
+    const fim=parseDate(c.fim),inicio=parseDate(c.inicio);
+    const days=diffDays(TODAY,fim),mrrSt=getMRRStatus(c);
+    let renClass='',diasTxt='';
+    if(mrrSt==='vencido'){renClass='expired-row';diasTxt=`<span style="color:#b91c1c;font-weight:700;font-size:11px">Vencido há ${Math.abs(days)}d</span>`;}
+    else if(mrrSt==='futuro'){diasTxt=`<span style="color:#7e22ce;font-size:11px">Inicia em ${diffDays(TODAY,inicio)}d</span>`;}
+    else if(days<=60){renClass='anomaly';diasTxt=`<span style="color:#c2410c;font-weight:700;font-size:11px">⚠ ${days}d restantes</span>`;}
+    else{diasTxt=`<span style="color:#64748b;font-size:11px">${days}d restantes</span>`;}
+    return`<tr class="${renClass}">
+      <td class="fw-bold">${c.clube}</td>
+      <td>${statusBadge(c.status)}</td><td>${getMRRStatusBadge(c)}</td>
+      <td class="text-right fw-bold font-mono">${fmt(c.mrr)}</td>
+      <td class="text-center">${c.cameras}</td>
+      <td class="text-right font-mono" style="color:#64748b;font-size:12px">${fmt(c.valorCam)}</td>
+      <td><span class="state-pill state-${c.estado}">${c.estado}</span> ${c.cidade}</td>
+      <td>${esporteTags(c.esportes)}</td>
+      <td style="font-size:12px;color:#475569">${c.contato}<br><span style="color:#94a3b8">${c.tel}</span></td>
+      <td style="font-size:11px;color:#475569">${parseDate(c.inicio).toLocaleDateString('pt-BR')}</td>
+      <td style="font-size:11px">${parseDate(c.fim).toLocaleDateString('pt-BR')}<br>${diasTxt}</td>
+      <td class="text-center" style="color:#64748b;font-size:12px">${c.meses}m</td>
+      <td class="text-right font-mono" style="font-size:12px;color:#475569">${fmt(c.mrr*c.meses)}</td>
+    </tr>`;
   }).join('');
 
-  el.innerHTML = `
-    <div class="card">
+  // Para gráficos de câmeras
+  const camData=[...contratos].filter(c=>getMRRStatus(c)!=='futuro').sort((a,b)=>b.cameras-a.cameras).slice(0,12);
+  const rpcData=[...contratos].filter(c=>getMRRStatus(c)!=='futuro'&&c.valorCam>0).sort((a,b)=>b.valorCam-a.valorCam).slice(0,12);
+
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:16px">
       <div class="card-title">
         <div class="card-title-left">📋 Todos os Contratos (${contratos.length})</div>
-        <div style="font-size:12px;color:#94a3b8">Linhas amarelas = vencendo em breve · Linhas vermelhas = vencidos</div>
+        <span class="card-sub">Amarelo = vencendo em breve · Vermelho = vencido</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Clube</th>
-              <th>Status Contrato</th>
-              <th>Status MRR</th>
-              <th class="text-right">MRR/mês</th>
-              <th class="text-center">Câmeras</th>
-              <th class="text-right">R$/câmera</th>
-              <th>Cidade / UF</th>
-              <th>Esporte</th>
-              <th>Contato</th>
-              <th>Início</th>
-              <th>Vencimento</th>
-              <th class="text-center">Duração</th>
-              <th class="text-right">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td><strong>TOTAL (${contratos.length})</strong></td>
-              <td colspan="2"></td>
-              <td class="text-right font-mono">${fmt(totalMRR)}</td>
-              <td class="text-center">${totalCams}</td>
-              <td colspan="6"></td>
-              <td class="text-center">—</td>
-              <td class="text-right font-mono">${fmt(totalContrato)}</td>
-            </tr>
-          </tfoot>
-        </table>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Clube</th><th>Status Contrato</th><th>Status MRR</th><th class="text-right">MRR/mês</th><th class="text-center">Câmeras</th><th class="text-right">R$/câmera</th><th>Cidade/UF</th><th>Esporte</th><th>Contato</th><th>Início</th><th>Vencimento</th><th class="text-center">Dur.</th><th class="text-right">Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="total-row">
+          <td><strong>TOTAL (${contratos.length})</strong></td><td colspan="2"></td>
+          <td class="text-right font-mono">${fmt(totalMRR)}</td>
+          <td class="text-center">${totalCams}</td>
+          <td colspan="6"></td><td class="text-center">—</td>
+          <td class="text-right font-mono">${fmt(totalContrato)}</td>
+        </tr></tfoot>
+      </table></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">📷 Câmeras por Cliente</div></div>
+        <div class="chart-container" style="height:300px"><canvas id="chart-cameras"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">💡 R$/Câmera por Cliente</div><span class="card-sub">Eficiência de receita</span></div>
+        <div class="chart-container" style="height:300px"><canvas id="chart-rpc"></canvas></div>
       </div>
     </div>
   `;
+
+  setTimeout(()=>{
+    new Chart(document.getElementById('chart-cameras'),{type:'bar',data:{
+      labels:camData.map(c=>c.clube),
+      datasets:[{label:'Câmeras',data:camData.map(c=>c.cameras),backgroundColor:camData.map((_,i)=>i===0?'#0f172a':'#f97316'),borderRadius:6}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{stepSize:1}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+
+    new Chart(document.getElementById('chart-rpc'),{type:'bar',data:{
+      labels:rpcData.map(c=>c.clube),
+      datasets:[{label:'R$/câmera',data:rpcData.map(c=>c.valorCam),backgroundColor:rpcData.map(c=>c.valorCam>=200?'#0f172a':'#f97316'),borderRadius:6}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}/câm`}}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{callback:v=>'R$ '+v}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  },50);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // TAB: RECEBIMENTOS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+function buildRecebimentos(){
+  const el=document.getElementById('recebimentos');
+  const curMes=TODAY.getMonth();
 
-function buildRecebimentos() {
-  const el = document.getElementById('recebimentos');
-
-  function cellHtml(v, mesIdx, contratoMrr) {
-    const isPast = mesIdx < 3;
-    const isCurrent = mesIdx === 3;
-    if (v === null) return `<span class="pay-vazio">—</span>`;
-    if (typeof v === 'number') {
-      if (isPast || isCurrent) return `<span class="pay-cell pay-pago">${fmt(v)}</span>`;
-      return `<span class="pay-cell pay-projetado">${fmt(v)}</span>`;
-    }
-    if (v === 'enviado')  return `<span class="pay-cell pay-enviado">Enviado</span>`;
-    if (v === 'pendente') return `<span class="pay-cell pay-pendente">Pendente</span>`;
-    return `<span class="pay-vazio">—</span>`;
+  function cellHtml(v,mesIdx){
+    const isPast=mesIdx<curMes,isCurrent=mesIdx===curMes;
+    if(v===null||v===undefined) return`<span class="pay-vazio">—</span>`;
+    if(typeof v==='number') return(isPast||isCurrent)?`<span class="pay-cell pay-pago">${fmt(v)}</span>`:`<span class="pay-cell pay-projetado">${fmt(v)}</span>`;
+    if(v==='enviado') return`<span class="pay-cell pay-enviado">Enviado</span>`;
+    if(v==='pendente') return`<span class="pay-cell pay-pendente">Pendente</span>`;
+    return`<span class="pay-vazio">—</span>`;
   }
 
-  const mesesTotais = MESES_KEYS.map((k, i) => {
-    let total = 0;
-    let count = 0;
-    contratos.forEach(c => {
-      const v = PAG[c.clube][k];
-      if (typeof v === 'number') { total += v; count++; }
-      else if (v === 'enviado' || v === 'pendente') total += c.mrr;
-    });
-    return total;
+  const rows=contratos.map(c=>{
+    const pagRow=PAG[c.clube]||{};
+    const cells=MESES_KEYS.map((k,i)=>`<td class="text-center">${cellHtml(pagRow[k],i)}</td>`).join('');
+    return`<tr><td class="fw-bold" style="white-space:nowrap">${c.clube}</td>${cells}</tr>`;
+  }).join('');
+
+  const totalRow=MESES_KEYS.map((k,i)=>{
+    let t=0; contratos.forEach(c=>{const v=(PAG[c.clube]||{})[k];if(typeof v==='number')t+=v;else if(v==='enviado'||v==='pendente')t+=c.mrr;});
+    const style=i<curMes?'color:#15803d':i===curMes?'color:#c2410c':'color:#6b7280';
+    return`<td class="text-center font-mono" style="font-size:12px;${style}">${t>0?fmt(t):'—'}</td>`;
+  }).join('');
+
+  // Taxa de coleta por mês
+  const taxaData=MESES_KEYS.slice(0,curMes).map(k=>{
+    const conf=calcMesMRR(k),esp=calcMesEsperado(k);
+    return esp>0?Math.round((conf/esp)*100):0;
   });
 
-  const rows = contratos.map(c => {
-    const cells = MESES_KEYS.map((k, i) =>
-      `<td class="text-center">${cellHtml(PAG[c.clube][k], i, c.mrr)}</td>`
-    ).join('');
-    return `<tr><td class="fw-bold" style="white-space:nowrap">${c.clube}</td>${cells}</tr>`;
-  }).join('');
-
-  const totalRow = MESES_KEYS.map((k, i) => {
-    const t = mesesTotais[i];
-    return `<td class="text-center font-mono" style="font-size:12px">${t > 0 ? fmt(t) : '—'}</td>`;
-  }).join('');
-
-  const legendaHtml = `
-    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:12px;">
-      <span><span class="pay-cell pay-pago" style="display:inline-block;padding:2px 8px">R$ 0,00</span> Pago / confirmado</span>
-      <span><span class="pay-cell pay-enviado" style="display:inline-block;padding:2px 8px">Enviado</span> Cobrança enviada</span>
-      <span><span class="pay-cell pay-pendente" style="display:inline-block;padding:2px 8px">Pendente</span> Deveria ter pago</span>
-      <span><span class="pay-cell pay-projetado" style="display:inline-block;padding:2px 8px">R$ 0,00</span> Projetado por contrato</span>
-      <span><span class="pay-vazio" style="display:inline-block">—</span> Fora do contrato</span>
-    </div>
-  `;
-
-  el.innerHTML = `
-    <div class="card">
+  const pastLbl=curMes>0?`${MESES_LABEL[0]}–${MESES_LABEL[curMes-1]}: confirmados · `:'';
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:16px">
       <div class="card-title">
         <div class="card-title-left">💰 Controle de Recebimentos 2026</div>
-        <div style="font-size:12px;color:#94a3b8">Jan–Mar: confirmados · Abr: situação atual · Mai–Dez: projetado por contrato</div>
+        <span class="card-sub">${pastLbl}${MESES_LABEL[curMes]}: atual${curMes<11?' · '+MESES_LABEL[curMes+1]+'–Dez: projetado':''}</span>
       </div>
-      ${legendaHtml}
-      <div class="table-wrap">
-        <table class="payment-table">
-          <thead>
-            <tr>
-              <th style="min-width:160px">Clube</th>
-              ${MESES_LABEL.map((m,i) => `<th class="text-center" style="${i<3?'background:#f0fdf4':i===3?'background:#fffbeb':''};min-width:85px">${m}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td><strong>TOTAL</strong></td>
-              ${totalRow}
-            </tr>
-          </tfoot>
-        </table>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:12px">
+        <span><span class="pay-cell pay-pago" style="display:inline-block;padding:2px 8px">R$ X</span> Pago</span>
+        <span><span class="pay-cell pay-enviado" style="display:inline-block;padding:2px 8px">Enviado</span> Cobrança enviada</span>
+        <span><span class="pay-cell pay-pendente" style="display:inline-block;padding:2px 8px">Pendente</span> Não pago</span>
+        <span><span class="pay-cell pay-projetado" style="display:inline-block;padding:2px 8px">R$ X</span> Projetado</span>
+        <span><span class="pay-vazio" style="display:inline-block">—</span> Fora do contrato</span>
       </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="min-width:160px">Clube</th>
+          ${MESES_LABEL.map((m,i)=>`<th class="text-center" style="${i<curMes?'background:#f0fdf4':i===curMes?'background:#fff7ed':''};min-width:80px">${m}</th>`).join('')}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="total-row"><td><strong>TOTAL</strong></td>${totalRow}</tr></tfoot>
+      </table></div>
     </div>
+    ${taxaData.length>0?`<div class="card">
+      <div class="card-title"><div class="card-title-left">📊 Taxa de Coleta por Mês</div><span class="card-sub">% dos pagamentos esperados que foram confirmados</span></div>
+      <div class="chart-container" style="height:200px"><canvas id="chart-taxa-coleta"></canvas></div>
+    </div>`:''}
   `;
+
+  if(taxaData.length>0){
+    setTimeout(()=>{
+      new Chart(document.getElementById('chart-taxa-coleta'),{type:'bar',data:{
+        labels:MESES_LABEL.slice(0,curMes),
+        datasets:[{label:'Taxa de Coleta %',data:taxaData,backgroundColor:taxaData.map(v=>v>=80?'#22c55e':v>=60?'#f97316':'#ef4444'),borderRadius:8}]
+      },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw}% coletado`}}},scales:{x:{grid:{display:false}},y:{min:0,max:100,grid:{color:'#f1f5f9'},ticks:{callback:v=>v+'%'}}}}});
+    },50);
+  }
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // TAB: RENOVAÇÕES
-// ═══════════════════════════════════════════════════════
-
-function buildRenovacoes() {
-  const el = document.getElementById('renovacoes');
-
-  const sorted = [...contratos]
-    .filter(c => getMRRStatus(c) !== 'futuro')
-    .sort((a, b) => new Date(a.fim) - new Date(b.fim));
-
-  function categorize(c) {
-    const days = diffDays(TODAY, parseDate(c.fim));
-    if (days < 0)   return { label: 'VENCIDO', cls: 'expired', dot: 'dot-red',    textCls: '#b91c1c' };
-    if (days <= 60)  return { label: `Vence em ${days} dias`, cls: 'urgent', dot: 'dot-orange', textCls: '#c2410c' };
-    if (days <= 120) return { label: `Vence em ${days} dias`, cls: 'watch',  dot: 'dot-yellow', textCls: '#92400e' };
-    return { label: `${days} dias restantes`, cls: 'ok', dot: 'dot-green', textCls: '#15803d' };
+// ═══════════════════════════════════════════
+function buildRenovacoes(){
+  const el=document.getElementById('renovacoes');
+  const sorted=[...contratos].filter(c=>getMRRStatus(c)!=='futuro').sort((a,b)=>new Date(a.fim)-new Date(b.fim));
+  function categorize(c){
+    const days=diffDays(TODAY,parseDate(c.fim));
+    if(days<0)   return{label:'VENCIDO',cls:'expired',dot:'dot-red',textCls:'#b91c1c'};
+    if(days<=60) return{label:`Vence em ${days} dias`,cls:'urgent',dot:'dot-orange',textCls:'#c2410c'};
+    if(days<=120)return{label:`Vence em ${days} dias`,cls:'watch',dot:'dot-yellow',textCls:'#92400e'};
+    return{label:`${days} dias restantes`,cls:'ok',dot:'dot-green',textCls:'#15803d'};
   }
-
-  const items = sorted.map(c => {
-    const cat = categorize(c);
-    const fim = parseDate(c.fim).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'});
-    return `
-      <div class="renewal-item ${cat.cls}">
-        <div class="dot ${cat.dot}"></div>
-        <div class="renewal-info">
-          <div class="renewal-clube">${c.clube}</div>
-          <div class="renewal-meta">${esporteTags(c.esportes)} &nbsp; <span class="state-pill state-${c.estado}">${c.estado}</span> — ${c.contato} · ${c.tel}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-weight:700;font-size:14px">${fmt(c.mrr)}<span style="font-weight:400;color:#94a3b8;font-size:11px">/mês</span></div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">Vence: ${fim}</div>
-          <div style="font-size:12px;font-weight:700;color:${cat.textCls};margin-top:2px">${cat.label}</div>
-        </div>
+  const items=sorted.map(c=>{
+    const cat=categorize(c);
+    const fim=parseDate(c.fim).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    return`<div class="renewal-item ${cat.cls}">
+      <div class="dot ${cat.dot}"></div>
+      <div class="renewal-info">
+        <div class="renewal-clube">${c.clube}</div>
+        <div class="renewal-meta">${esporteTags(c.esportes)} <span class="state-pill state-${c.estado}">${c.estado}</span> — ${c.contato} · ${c.tel}</div>
       </div>
-    `;
+      <div style="text-align:right">
+        <div style="font-weight:700;font-size:14px">${fmt(c.mrr)}<span style="font-weight:400;color:#94a3b8;font-size:11px">/mês</span></div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">Vence: ${fim}</div>
+        <div style="font-size:12px;font-weight:700;color:${cat.textCls};margin-top:2px">${cat.label}</div>
+      </div>
+    </div>`;
   }).join('');
 
-  const mrrVencido = contratos.filter(c=>getMRRStatus(c)==='vencido').reduce((s,c)=>s+c.mrr,0);
-  const mrrUrgente = contratos.filter(c=>{
-    const days = diffDays(TODAY, parseDate(c.fim));
-    return days >= 0 && days <= 60;
-  }).reduce((s,c)=>s+c.mrr,0);
+  const mrrVencido=contratos.filter(c=>getMRRStatus(c)==='vencido').reduce((s,c)=>s+c.mrr,0);
+  const mrrUrgente=contratos.filter(c=>{const d=diffDays(TODAY,parseDate(c.fim));return d>=0&&d<=60;}).reduce((s,c)=>s+c.mrr,0);
 
-  el.innerHTML = `
+  el.innerHTML=`
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card" style="text-align:center">
         <div class="kpi-label">MRR com Renovação Vencida</div>
-        <div class="kpi-value" style="color:#b91c1c">${fmt(mrrVencido)}</div>
+        <div class="kpi-value" style="color:#ef4444">${fmt(mrrVencido)}</div>
         <div class="kpi-sub">Renovação urgente necessária</div>
       </div>
       <div class="card" style="text-align:center">
         <div class="kpi-label">MRR Vencendo em 60 dias</div>
-        <div class="kpi-value" style="color:#c2410c">${fmt(mrrUrgente)}</div>
+        <div class="kpi-value" style="color:#f97316">${fmt(mrrUrgente)}</div>
         <div class="kpi-sub">Iniciar processo de renovação agora</div>
       </div>
     </div>
     <div class="card">
-      <div class="card-title"><div class="card-title-left">🔄 Cronograma de Renovações (por vencimento)</div></div>
+      <div class="card-title"><div class="card-title-left">🔄 Cronograma de Renovações</div></div>
       <div class="renewal-list">${items}</div>
-    </div>
-  `;
+    </div>`;
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // TAB: PROJEÇÃO MRR
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+function buildProjecao(){
+  const el=document.getElementById('projecao');
+  const curMes=TODAY.getMonth();
+  const mrrPorMes=MESES_KEYS.map((k,i)=>({mes:MESES_LABEL[i],key:k,confirmado:calcMesMRR(k),esperado:calcMesEsperado(k)}));
 
-function buildProjecao() {
-  const el = document.getElementById('projecao');
-
-  const mrrPorMes = MESES_KEYS.map((k, i) => {
-    let confirmado = calcMesMRR(k);
-    let esperado = calcMesEsperado(k);
-    return { mes: MESES_LABEL[i], key: k, confirmado, esperado };
-  });
-
-  const projecaoRows = mrrPorMes.map((m, i) => {
-    const prev = i > 0 ? mrrPorMes[i-1].esperado : null;
-    const delta = prev !== null ? m.esperado - prev : null;
-    const isConfirmado = i < 3;
-    const isCurrent = i === 3;
-    let rowStyle = '';
-    if (isConfirmado) rowStyle = 'background:#f0fdf4;';
-    if (isCurrent) rowStyle = 'background:#fffbeb;';
-
-    const deltaHtml = delta !== null
-      ? `<span style="font-size:11px;color:${delta>=0?'#15803d':'#b91c1c'}">${delta>=0?'+':''}${fmt(delta)}</span>`
-      : '—';
-
-    return `
-      <tr style="${rowStyle}">
-        <td class="fw-bold">${m.mes}</td>
-        <td class="text-right font-mono">${isConfirmado && m.confirmado > 0 ? fmt(m.confirmado) : '—'}</td>
-        <td class="text-right font-mono fw-bold">${fmt(m.esperado)}</td>
-        <td class="text-right">${deltaHtml}</td>
-        <td class="text-center">
-          ${isConfirmado ? '<span class="badge badge-assinado">Confirmado</span>' :
-            isCurrent ? '<span class="badge badge-enviado">Abr/Enviado</span>' :
-            '<span class="badge badge-aguardando">Projetado</span>'}
-        </td>
-        <td>
-          <div style="background:#e2e8f0;border-radius:4px;height:8px;width:100%;max-width:200px">
-            <div style="background:${isConfirmado?'#22c55e':isCurrent?'#fbbf24':'#93c5fd'};height:100%;border-radius:4px;width:${Math.min(100,(m.esperado/7000)*100)}%"></div>
-          </div>
-        </td>
-      </tr>
-    `;
+  const projecaoRows=mrrPorMes.map((m,i)=>{
+    const prev=i>0?mrrPorMes[i-1].esperado:null;
+    const delta=prev!==null?m.esperado-prev:null;
+    const isConf=i<curMes,isCur=i===curMes;
+    const rowStyle=isConf?'background:#f0fdf4':isCur?'background:#fff7ed':'';
+    const deltaHtml=delta!==null?`<span style="font-size:11px;color:${delta>=0?'#15803d':'#b91c1c'}">${delta>=0?'+':''}${fmt(delta)}</span>`:'—';
+    return`<tr style="${rowStyle}">
+      <td class="fw-bold">${m.mes}</td>
+      <td class="text-right font-mono">${isConf&&m.confirmado>0?fmt(m.confirmado):'—'}</td>
+      <td class="text-right font-mono fw-bold">${fmt(m.esperado)}</td>
+      <td class="text-right">${deltaHtml}</td>
+      <td class="text-center">${isConf?'<span class="badge badge-assinado">Confirmado</span>':isCur?'<span class="badge badge-enviado">Atual</span>':'<span class="badge badge-aguardando">Projetado</span>'}</td>
+      <td><div class="prog-bar" style="max-width:180px"><div class="prog-fill ${isConf?'green':isCur?'':'orange'}" style="width:${Math.min(100,(m.esperado/10000)*100)}%"></div></div></td>
+    </tr>`;
   }).join('');
 
-  el.innerHTML = `
+  const mrrAtual=calcMesEsperado(MESES_KEYS[curMes]);
+  const mrrDez=calcMesEsperado('dez');
+  const ativosLen=contratos.filter(c=>getMRRStatus(c)==='ativo').length;
+  const ticketMedio=ativosLen>0?Math.round(mrrAtual/ativosLen):0;
+
+  el.innerHTML=`
     <div class="card" style="margin-bottom:16px">
       <div class="card-title"><div class="card-title-left">📈 Projeção MRR 2026</div></div>
-      <div class="chart-container" style="height:260px">
-        <canvas id="chart-projecao"></canvas>
-      </div>
+      <div class="chart-container" style="height:260px"><canvas id="chart-projecao"></canvas></div>
     </div>
     <div class="grid-2">
       <div class="card">
-        <div class="card-title"><div class="card-title-left">📊 Tabela de Projeção Mensal</div></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Mês</th>
-                <th class="text-right">Confirmado</th>
-                <th class="text-right">Esperado/Projetado</th>
-                <th class="text-right">Δ vs Mês Anterior</th>
-                <th class="text-center">Status</th>
-                <th style="min-width:200px">Barra</th>
-              </tr>
-            </thead>
-            <tbody>${projecaoRows}</tbody>
-          </table>
-        </div>
+        <div class="card-title"><div class="card-title-left">📊 Tabela Mensal</div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Mês</th><th class="text-right">Confirmado</th><th class="text-right">Esperado</th><th class="text-right">Δ</th><th class="text-center">Status</th><th style="min-width:180px">Progresso</th></tr></thead>
+          <tbody>${projecaoRows}</tbody>
+        </table></div>
       </div>
       <div class="card">
-        <div class="card-title"><div class="card-title-left">🎯 Marcos de MRR</div></div>
+        <div class="card-title"><div class="card-title-left">🎯 Metas 2026</div></div>
         <div class="obs-list">
-          <div class="obs" style="border-color:#22c55e;background:#f0fdf4;color:#15803d;">
-            <strong>Meta 1S/2026: R$10.400</strong> (Abr/26) — MRR atual ≈ ${fmt(calcMesEsperado('abr'))}
-            <div style="margin-top:6px;background:#e2e8f0;border-radius:4px;height:8px">
-              <div style="background:#22c55e;height:100%;border-radius:4px;width:${Math.min(100,(calcMesEsperado('abr')/10400)*100).toFixed(0)}%"></div>
-            </div>
-            <div style="font-size:11px;margin-top:4px">${((calcMesEsperado('abr')/10400)*100).toFixed(0)}% da meta</div>
+          <div class="obs green"><strong>Meta 1S/2026: R$ 10.400</strong> — atual: ${fmt(mrrAtual)}
+            <div class="prog-bar" style="margin-top:8px"><div class="prog-fill green" style="width:${Math.min(100,(mrrAtual/10400)*100).toFixed(0)}%"></div></div>
+            <div style="font-size:11px;margin-top:4px">${((mrrAtual/10400)*100).toFixed(0)}% da meta</div>
           </div>
-          <div class="obs" style="border-color:#3b82f6;background:#eff6ff;color:#1e40af;">
-            <strong>Meta Anual 2026: R$25.000</strong> (Dez/26) — Projetado: ${fmt(calcMesEsperado('dez'))}
-            <div style="margin-top:6px;background:#e2e8f0;border-radius:4px;height:8px">
-              <div style="background:#3b82f6;height:100%;border-radius:4px;width:${Math.min(100,(calcMesEsperado('dez')/25000)*100).toFixed(0)}%"></div>
-            </div>
-            <div style="font-size:11px;margin-top:4px">${((calcMesEsperado('dez')/25000)*100).toFixed(0)}% da meta anual — precisa de novos clientes</div>
+          <div class="obs"><strong>Meta Anual 2026: R$ 25.000</strong> — projetado Dez: ${fmt(mrrDez)}
+            <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:${Math.min(100,(mrrDez/25000)*100).toFixed(0)}%"></div></div>
+            <div style="font-size:11px;margin-top:4px">${((mrrDez/25000)*100).toFixed(0)}% da meta anual</div>
           </div>
-          <div class="obs warn">
-            <strong>Atenção:</strong> sem novas vendas após Maio, MRR estabiliza em ~${fmt(calcMesEsperado('jun'))} e contratos como JR03 (Jun) e Ravenna (Mai) vencem. Manter cadência de 4 novos clientes/mês é crítico.
-          </div>
-          <div class="obs">
-            <strong>Ticket médio atual:</strong> R$ ${Math.round(calcMesEsperado('abr') / contratos.filter(c=>getMRRStatus(c)==='ativo').length).toLocaleString('pt-BR')} &nbsp;|&nbsp;
-            <strong>Meta:</strong> R$450 &nbsp;|&nbsp;
-            <strong>Gap:</strong> +R${(450 - Math.round(calcMesEsperado('abr') / contratos.filter(c=>getMRRStatus(c)==='ativo').length)).toLocaleString('pt-BR')}/cliente
-          </div>
+          <div class="obs gray"><strong>Ticket médio:</strong> ${fmt(ticketMedio)} | <strong>Meta:</strong> R$ 450 | <strong>Gap:</strong> ${ticketMedio<450?'+R$ '+(450-ticketMedio).toLocaleString('pt-BR')+'/cliente':'Meta atingida ✓'}</div>
+          <div class="obs gray">Necessário <strong>4 novos clientes/mês</strong> para atingir meta anual.</div>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  setTimeout(() => {
-    new Chart(document.getElementById('chart-projecao'), {
-      type: 'line',
-      data: {
-        labels: MESES_LABEL,
-        datasets: [
-          {
-            label: 'MRR Confirmado',
-            data: MESES_KEYS.map((k,i) => i < 3 ? calcMesMRR(k) : null),
-            borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.1)',
-            borderWidth: 3, pointRadius: 5, fill: true, tension: 0.3,
-          },
-          {
-            label: 'MRR Esperado/Projetado',
-            data: MESES_KEYS.map(k => calcMesEsperado(k)),
-            borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.05)',
-            borderWidth: 2, borderDash: [5,3], pointRadius: 4, fill: true, tension: 0.3,
-          },
-          {
-            label: 'Meta 2026',
-            data: [5000,6800,8600,10400,12200,14000,15800,17600,19400,21200,23000,25000],
-            borderColor: '#f97316', borderWidth: 1.5, borderDash: [3,3],
-            pointRadius: 0, fill: false,
-          }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 } } },
-          tooltip: {
-            callbacks: { label: ctx => ` ${ctx.dataset.label}: R$ ${ctx.raw?.toLocaleString('pt-BR') || '—'}` }
-          }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: { font: { size: 11 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' }
-          }
-        }
-      }
-    });
-  }, 50);
+  setTimeout(()=>{
+    new Chart(document.getElementById('chart-projecao'),{type:'line',data:{
+      labels:MESES_LABEL,
+      datasets:[
+        {label:'MRR Confirmado',data:MESES_KEYS.map((k,i)=>i<curMes?calcMesMRR(k):null),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',borderWidth:3,pointRadius:5,fill:true,tension:0.3},
+        {label:'MRR Esperado/Projetado',data:MESES_KEYS.map(k=>calcMesEsperado(k)),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.05)',borderWidth:2,borderDash:[5,3],pointRadius:4,fill:true,tension:0.3},
+        {label:'Meta',data:[5000,6800,8600,10400,12200,14000,15800,17600,19400,21200,23000,25000],borderColor:'#0f172a',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: R$ ${ctx.raw?.toLocaleString('pt-BR')||'—'}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}}}});
+  },50);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// TAB: ESTOQUE
+// ═══════════════════════════════════════════
+function buildEstoque(){
+  const el=document.getElementById('estoque');
+  if(!estoque.length){el.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#94a3b8">Nenhum dado de estoque encontrado.</div>';return;}
+
+  // Agrupar por categoria
+  const cats={};
+  estoque.forEach(e=>{cats[e.categoria]=(cats[e.categoria]||0)+e.qtde;});
+  const totalItens=estoque.reduce((s,e)=>s+e.qtde,0);
+  const totalTipos=estoque.length;
+  const totalCats=Object.keys(cats).length;
+  const alertas=estoque.filter(e=>e.qtde<=2);
+  const criticos=estoque.filter(e=>e.qtde===1);
+
+  function estoqueStatus(qtde){
+    if(qtde===1) return'<span class="badge badge-critico">🔴 Crítico</span>';
+    if(qtde<=3)  return'<span class="badge badge-baixo">🟠 Baixo</span>';
+    return'<span class="badge badge-ok">✓ OK</span>';
+  }
+
+  const tableRows=[...estoque].sort((a,b)=>a.qtde-b.qtde).map(e=>`
+    <tr class="${e.qtde===1?'expired-row':e.qtde<=3?'anomaly':''}">
+      <td class="fw-bold">${e.item}</td>
+      <td><span class="kpi-chip chip-gray" style="font-size:11px">${e.categoria}</span></td>
+      <td class="text-center fw-bold" style="font-size:16px;color:${e.qtde===1?'#ef4444':e.qtde<=3?'#f97316':'#22c55e'}">${e.qtde}</td>
+      <td>${estoqueStatus(e.qtde)}</td>
+    </tr>`).join('');
+
+  el.innerHTML=`
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="kpi-card"><div class="kpi-label">Total em Estoque</div><div class="kpi-value">${totalItens}</div><div class="kpi-sub">unidades disponíveis</div></div>
+      <div class="kpi-card"><div class="kpi-label">Tipos de Item</div><div class="kpi-value">${totalTipos}</div><div class="kpi-sub">itens diferentes</div></div>
+      <div class="kpi-card"><div class="kpi-label">Categorias</div><div class="kpi-value">${totalCats}</div><div class="kpi-sub">${Object.keys(cats).join(', ')}</div></div>
+      <div class="kpi-card ${alertas.length?'red':'green'}"><div class="kpi-label">Alertas de Estoque</div><div class="kpi-value" style="color:${alertas.length?'#ef4444':'#22c55e'}">${alertas.length}</div><div class="kpi-sub">${criticos.length} crítico(s) · ${alertas.length-criticos.length} baixo(s)</div></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">📦 Estoque por Categoria</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="chart-estoque-cat"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">📊 Quantidade por Item</div><span class="card-sub">Ordenado por quantidade (menor = mais urgente)</span></div>
+        <div class="chart-container" style="height:260px"><canvas id="chart-estoque-itens"></canvas></div>
+      </div>
+    </div>
+    ${alertas.length?`<div class="card" style="border:2px solid #fed7aa;margin-bottom:16px">
+      <div class="card-title" style="color:#c2410c"><div class="card-title-left">⚠️ Itens com Estoque Crítico ou Baixo</div></div>
+      <div class="obs-list">
+        ${criticos.map(e=>`<div class="obs danger"><strong>${e.item}</strong> (${e.categoria}) — apenas <strong>${e.qtde} unidade</strong>. Reabastecer com urgência!</div>`).join('')}
+        ${alertas.filter(e=>e.qtde>1).map(e=>`<div class="obs"><strong>${e.item}</strong> (${e.categoria}) — ${e.qtde} unidades restantes.</div>`).join('')}
+      </div>
+    </div>`:''}
+    <div class="card">
+      <div class="card-title"><div class="card-title-left">📋 Inventário Completo</div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>Categoria</th><th class="text-center">Qtde</th><th>Status</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot><tr class="total-row"><td><strong>TOTAL</strong></td><td></td><td class="text-center">${totalItens}</td><td></td></tr></tfoot>
+      </table></div>
+    </div>`;
+
+  setTimeout(()=>{
+    const catKeys=Object.keys(cats), catVals=Object.values(cats);
+    const catColors=['#f97316','#ea580c','#fbbf24','#0f172a','#1e293b','#fed7aa'];
+    new Chart(document.getElementById('chart-estoque-cat'),{type:'doughnut',data:{
+      labels:catKeys,datasets:[{data:catVals,backgroundColor:catColors.slice(0,catKeys.length),borderWidth:2,borderColor:'#fff'}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} unidades`}}}}});
+
+    const sortedItems=[...estoque].sort((a,b)=>a.qtde-b.qtde);
+    new Chart(document.getElementById('chart-estoque-itens'),{type:'bar',data:{
+      labels:sortedItems.map(e=>e.item),
+      datasets:[{label:'Qtde',data:sortedItems.map(e=>e.qtde),backgroundColor:sortedItems.map(e=>e.qtde===1?'#ef4444':e.qtde<=3?'#f97316':'#22c55e'),borderRadius:6}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{stepSize:1}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  },50);
+}
+
+// ═══════════════════════════════════════════
 // TAB SWITCHER
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+let builtTabs={};
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque'];
 
-let builtTabs = { 'contratos': true };
-
-function switchTab(id) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const ids = ['visao-geral','contratos','recebimentos','renovacoes','projecao'];
-    b.classList.toggle('active', ids[i] === id);
-  });
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-
-  if (!builtTabs[id]) {
-    builtTabs[id] = true;
-    if (id === 'visao-geral')  buildVisaoGeral();
-    if (id === 'contratos')    buildContratos();
-    if (id === 'recebimentos') buildRecebimentos();
-    if (id === 'renovacoes')   buildRenovacoes();
-    if (id === 'projecao')     buildProjecao();
+  if(!builtTabs[id]){
+    builtTabs[id]=true;
+    if(id==='visao-geral')  buildVisaoGeral();
+    if(id==='contratos')    buildContratos();
+    if(id==='recebimentos') buildRecebimentos();
+    if(id==='renovacoes')   buildRenovacoes();
+    if(id==='projecao')     buildProjecao();
+    if(id==='estoque')      buildEstoque();
   }
 }
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadData();
 </script>
 </body>
 </html>
