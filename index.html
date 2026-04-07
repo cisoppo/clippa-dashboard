@@ -529,12 +529,12 @@ function buildKPIs(){
   const mrrRisco=vencendo60.reduce((s,c)=>s+c.mrr,0);
 
   const kpis=[
-    { label:'MRR '+MESES_LABEL[TODAY.getMonth()], value:fmtK(mrrAtual), sub:`${MESES_LABEL[Math.max(TODAY.getMonth()-1,0)]} confirmado: ${fmtK(mrrPrev)}`, chip: mrrAtual>=mrrPrev?`↑ +${fmtK(mrrAtual-mrrPrev)}`:`↓ ${fmtK(mrrAtual-mrrPrev)}`, chipCls:mrrAtual>=mrrPrev?'chip-up':'chip-down' },
-    { label:'MRR '+MESES_LABEL[Math.min(TODAY.getMonth()+1,11)]+' (proj.)', value:fmtK(mrrProx), sub:'Baseado nos contratos vigentes', chip:`+${fmtK(mrrProx-mrrAtual)} vs atual`, chipCls:mrrProx>=mrrAtual?'chip-up':'chip-down', cls:'green' },
+    { label:'MRR '+MESES_LABEL[TODAY.getMonth()], value:fmt(mrrAtual), sub:`${MESES_LABEL[Math.max(TODAY.getMonth()-1,0)]} confirmado: ${fmt(mrrPrev)}`, chip: mrrAtual>=mrrPrev?`↑ +${fmt(mrrAtual-mrrPrev)}`:`↓ ${fmt(mrrAtual-mrrPrev)}`, chipCls:mrrAtual>=mrrPrev?'chip-up':'chip-down' },
+    { label:'MRR '+MESES_LABEL[Math.min(TODAY.getMonth()+1,11)]+' (proj.)', value:fmt(mrrProx), sub:'Baseado nos contratos vigentes', chip:`+${fmt(mrrProx-mrrAtual)} vs atual`, chipCls:mrrProx>=mrrAtual?'chip-up':'chip-down', cls:'green' },
     { label:'Clientes Ativos', value:ativos.length, sub:`de ${contratos.length} total · ${futuros.length} futuros`, chip:`${futuros.length} a entrar`, chipCls:'chip-gray', cls:'purple' },
     { label:'Câmeras Ativas', value:activeCams, sub:`${ativos.length>0?(mrrAtual/activeCams).toFixed(0):0} R$/câm`, chip:`${contratos.reduce((s,c)=>s+c.cameras,0)} total instaladas`, chipCls:'chip-gray' },
     { label:'Taxa de Coleta', value:taxaColeta+'%', sub:'Pagamentos confirmados ÷ esperados', chip:taxaColeta>=80?'Saudável':taxaColeta>=60?'Atenção':'Crítico', chipCls:taxaColeta>=80?'chip-up':taxaColeta>=60?'chip-warn':'chip-down', cls:taxaColeta>=80?'green':taxaColeta>=60?'amber':'red' },
-    { label:'MRR em Risco 60d', value:fmtK(mrrRisco), sub:`${vencendo60.length} contratos vencendo`, chip:vencendo60.length?'Renovar urgente':'Tudo OK', chipCls:vencendo60.length?'chip-warn':'chip-up', cls:vencendo60.length?'amber':'green' },
+    { label:'MRR em Risco 60d', value:fmt(mrrRisco), sub:`${vencendo60.length} contratos vencendo`, chip:vencendo60.length?'Renovar urgente':'Tudo OK', chipCls:vencendo60.length?'chip-warn':'chip-up', cls:vencendo60.length?'amber':'green' },
   ];
   document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`
     <div class="kpi-card ${k.cls||''}">
