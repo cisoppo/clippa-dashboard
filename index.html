@@ -1396,25 +1396,30 @@ function buildImplantacao(){
 // CLIENTE vs PRODUTO PARSER
 // ═══════════════════════════════════════════
 function buildClienteProdutoFromCSV(rows) {
-  // Find header row (contains "Clube")
   let headerIdx = rows.findIndex(r => Object.values(r).some(v => (v||'').toString().toLowerCase().includes('clube')));
   if(headerIdx < 0) headerIdx = 0;
-  // Remap: use the raw row after header as data
   const data = [];
   rows.forEach((row, i) => {
     if(i <= headerIdx) return;
     const vals = Object.values(row);
     const clube = (vals[0]||'').trim();
-    if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media')) return;
+    if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media') || clube.toLowerCase().includes('total')) return;
     const isBool = v => (v||'').toString().toUpperCase()==='TRUE'||(v||'').toString()==='✓'||(v||'').toString()==='1';
+    const cameras = parseInt(vals[11]||'0')||0;
+    // vals[2,4,6,8,10] = valor POR CÂMERA; total = valor × cameras
+    const pcReplay  = parseMoney(vals[2]||'');
+    const pcTrans   = parseMoney(vals[4]||'');
+    const pcPlacar  = parseMoney(vals[6]||'');
+    const pcComanda = parseMoney(vals[8]||'');
+    const pcProf    = parseMoney(vals[10]||'');
     data.push({
       clube,
-      replay:       isBool(vals[1]),  valorReplay:   parseMoney(vals[2]||''),
-      transmissao:  isBool(vals[3]),  valorTransmissao: parseMoney(vals[4]||''),
-      placar:       isBool(vals[5]),  valorPlacar:   parseMoney(vals[6]||''),
-      comanda:      isBool(vals[7]),  valorComanda:  parseMoney(vals[8]||''),
-      professores:  isBool(vals[9]),  valorProfessores: parseMoney(vals[10]||''),
-      cameras:      parseInt(vals[11]||'0')||0,
+      cameras,
+      replay:       isBool(vals[1]),  pcReplay,   valorReplay:      pcReplay  * cameras,
+      transmissao:  isBool(vals[3]),  pcTrans,    valorTransmissao: pcTrans   * cameras,
+      placar:       isBool(vals[5]),  pcPlacar,   valorPlacar:      pcPlacar  * cameras,
+      comanda:      isBool(vals[7]),  pcComanda,  valorComanda:     pcComanda * cameras,
+      professores:  isBool(vals[9]),  pcProf,     valorProfessores: pcProf    * cameras,
     });
   });
   return data;
@@ -1427,152 +1432,150 @@ function buildClienteProduto() {
   const el = document.getElementById('cliente-produto');
   if(!clienteProduto.length){ el.innerHTML='<div class="card" style="padding:32px;text-align:center;color:#94a3b8">Nenhum dado encontrado na planilha.</div>'; return; }
 
-  const total = clienteProduto.length;
   const totalCams = clienteProduto.reduce((s,c)=>s+c.cameras,0);
 
-  // Service stats
-  const servicos = [
-    { key:'replay',       label:'Replay',               valKey:'valorReplay' },
-    { key:'transmissao',  label:'Transmissão',           valKey:'valorTransmissao' },
-    { key:'placar',       label:'Placar',                valKey:'valorPlacar' },
-    { key:'comanda',      label:'Gestão de Comanda',     valKey:'valorComanda' },
-    { key:'professores',  label:'Gestão de Professores', valKey:'valorProfessores' },
-  ];
+  // Totais por serviço
+  const totReplay  = clienteProduto.filter(c=>c.replay).reduce((s,c)=>s+c.valorReplay,0);
+  const totTrans   = clienteProduto.filter(c=>c.transmissao).reduce((s,c)=>s+c.valorTransmissao,0);
+  const totPlacar  = clienteProduto.filter(c=>c.placar).reduce((s,c)=>s+c.valorPlacar,0);
+  const totComanda = clienteProduto.filter(c=>c.comanda).reduce((s,c)=>s+c.valorComanda,0);
+  const totProf    = clienteProduto.filter(c=>c.professores).reduce((s,c)=>s+c.valorProfessores,0);
+  const totGeral   = totReplay+totTrans+totPlacar+totComanda+totProf;
 
-  const statsCards = servicos.map(s => {
-    const com = clienteProduto.filter(c=>c[s.key]);
-    const vals = com.map(c=>c[s.valKey]).filter(v=>v>0);
-    const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-    const pct = total > 0 ? Math.round((com.length/total)*100) : 0;
-    return `<div class="kpi-card">
-      <div class="kpi-label">${s.label}</div>
-      <div class="kpi-value">${com.length} clientes</div>
-      <div class="kpi-sub">${pct}% da base · média ${avg>0?fmt(avg):'—'}/quad</div>
-    </div>`;
-  }).join('');
+  // Câmeras por serviço (para ticket médio)
+  const camReplay  = clienteProduto.filter(c=>c.replay).reduce((s,c)=>s+c.cameras,0);
+  const camTrans   = clienteProduto.filter(c=>c.transmissao).reduce((s,c)=>s+c.cameras,0);
+  const camPlacar  = clienteProduto.filter(c=>c.placar).reduce((s,c)=>s+c.cameras,0);
+  const camComanda = clienteProduto.filter(c=>c.comanda).reduce((s,c)=>s+c.cameras,0);
+  const camProf    = clienteProduto.filter(c=>c.professores).reduce((s,c)=>s+c.cameras,0);
 
-  // Weighted avg per client (rules from planilha)
-  // replay+trans = 80% replay + 20% trans
-  // replay+trans+placar = 50% replay + 20% trans + 30% placar
+  // Ticket médio = total serviço / cameras dos clientes com aquele serviço
+  const tmReplay  = camReplay  > 0 ? totReplay/camReplay   : 0;
+  const tmTrans   = camTrans   > 0 ? totTrans/camTrans      : 0;
+  const tmPlacar  = camPlacar  > 0 ? totPlacar/camPlacar   : 0;
+  const tmComanda = camComanda > 0 ? totComanda/camComanda : 0;
+  const tmProf    = camProf    > 0 ? totProf/camProf       : 0;
+
+  const nReplay  = clienteProduto.filter(c=>c.replay).length;
+  const nTrans   = clienteProduto.filter(c=>c.transmissao).length;
+  const nPlacar  = clienteProduto.filter(c=>c.placar).length;
+  const nComanda = clienteProduto.filter(c=>c.comanda).length;
+  const nProf    = clienteProduto.filter(c=>c.professores).length;
+  const total    = clienteProduto.length;
+
+  const svcColors = ['#f97316','#ea580c','#fbbf24','#0ea5e9','#a855f7'];
+  const svcLabels = ['Replay','Transmissão','Placar','G. Comanda','G. Professores'];
+  const svcTotais = [totReplay,totTrans,totPlacar,totComanda,totProf];
+  const svcCounts = [nReplay,nTrans,nPlacar,nComanda,nProf];
+  const svcTM     = [tmReplay,tmTrans,tmPlacar,tmComanda,tmProf];
+
+  // Rows
   const clienteRows = clienteProduto.map(c => {
     const tags = [];
-    if(c.replay) tags.push(`<span class="tag tag-areia">Replay</span>`);
+    if(c.replay)      tags.push(`<span class="tag tag-areia">Replay</span>`);
     if(c.transmissao) tags.push(`<span class="tag tag-padel">Transmissão</span>`);
-    if(c.placar) tags.push(`<span class="tag tag-society">Placar</span>`);
-    if(c.comanda) tags.push(`<span class="tag" style="background:#e0f2fe;color:#0369a1">Comanda</span>`);
+    if(c.placar)      tags.push(`<span class="tag tag-society">Placar</span>`);
+    if(c.comanda)     tags.push(`<span class="tag" style="background:#e0f2fe;color:#0369a1">Comanda</span>`);
     if(c.professores) tags.push(`<span class="tag" style="background:#f3e8ff;color:#7c3aed">Professores</span>`);
-
-    // Ponderado por câmera (valor total / câmeras)
-    const total = [c.replay?c.valorReplay:0, c.transmissao?c.valorTransmissao:0, c.placar?c.valorPlacar:0, c.comanda?c.valorComanda:0, c.professores?c.valorProfessores:0].reduce((a,b)=>a+b,0);
-    const porCam = c.cameras > 0 ? total/c.cameras : 0;
-
+    const totalCliente = c.valorReplay+c.valorTransmissao+c.valorPlacar+c.valorComanda+c.valorProfessores;
     return `<tr>
       <td class="fw-bold">${c.clube}</td>
-      <td>${tags.join(' ')}</td>
-      <td class="text-right font-mono">${c.valorReplay>0?fmt(c.valorReplay):'—'}</td>
-      <td class="text-right font-mono">${c.valorTransmissao>0?fmt(c.valorTransmissao):'—'}</td>
-      <td class="text-right font-mono">${c.valorPlacar>0?fmt(c.valorPlacar):'—'}</td>
+      <td class="text-center">${c.cameras}</td>
+      <td class="text-right font-mono">${c.valorReplay>0?fmt(c.valorReplay):'—'}<br><span style="color:#94a3b8;font-size:11px">${c.pcReplay>0?fmt(c.pcReplay)+'/câm':''}</span></td>
+      <td class="text-right font-mono">${c.valorTransmissao>0?fmt(c.valorTransmissao):'—'}<br><span style="color:#94a3b8;font-size:11px">${c.pcTrans>0?fmt(c.pcTrans)+'/câm':''}</span></td>
+      <td class="text-right font-mono">${c.valorPlacar>0?fmt(c.valorPlacar):'—'}<br><span style="color:#94a3b8;font-size:11px">${c.pcPlacar>0?fmt(c.pcPlacar)+'/câm':''}</span></td>
       <td class="text-right font-mono">${c.valorComanda>0?fmt(c.valorComanda):'—'}</td>
       <td class="text-right font-mono">${c.valorProfessores>0?fmt(c.valorProfessores):'—'}</td>
-      <td class="text-center fw-bold">${c.cameras}</td>
-      <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(total)}</td>
-      <td class="text-right font-mono" style="color:#64748b;font-size:12px">${porCam>0?fmt(porCam):'—'}</td>
+      <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(totalCliente)}</td>
     </tr>`;
   }).join('');
-
-  // Totals row
-  const totReplay = clienteProduto.filter(c=>c.replay).reduce((s,c)=>s+c.valorReplay,0);
-  const totTrans  = clienteProduto.filter(c=>c.transmissao).reduce((s,c)=>s+c.valorTransmissao,0);
-  const totPlacar = clienteProduto.filter(c=>c.placar).reduce((s,c)=>s+c.valorPlacar,0);
-  const totComanda= clienteProduto.filter(c=>c.comanda).reduce((s,c)=>s+c.valorComanda,0);
-  const totProf   = clienteProduto.filter(c=>c.professores).reduce((s,c)=>s+c.valorProfessores,0);
-  const totGeral  = totReplay+totTrans+totPlacar+totComanda+totProf;
-  const avgPorCam = totalCams>0?totGeral/totalCams:0;
-
-  // Service distribution chart data
-  const svcLabels = servicos.map(s=>s.label);
-  const svcCounts = servicos.map(s=>clienteProduto.filter(c=>c[s.key]).length);
-  const svcAvgs   = servicos.map(s=>{
-    const vals = clienteProduto.filter(c=>c[s.key]&&c[s.valKey]>0).map(c=>c[s.valKey]);
-    return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
-  });
 
   el.innerHTML = `
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card green">
-        <div class="kpi-label">Total Clientes</div>
-        <div class="kpi-value">${total}</div>
-        <div class="kpi-sub">com dados de produto</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Câmeras</div>
-        <div class="kpi-value">${totalCams}</div>
-        <div class="kpi-sub">média ${total>0?Math.round(totalCams/total):0} por cliente</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">MRR Total (serviços)</div>
+        <div class="kpi-label">Total MRR Serviços</div>
         <div class="kpi-value">${fmtK(totGeral)}</div>
-        <div class="kpi-sub">${fmt(avgPorCam)}/câmera média</div>
+        <div class="kpi-sub">${totalCams} câmeras · ${total} clientes</div>
       </div>
-      ${statsCards}
+      <div class="kpi-card">
+        <div class="kpi-label">Replay</div>
+        <div class="kpi-value">${fmtK(totReplay)}</div>
+        <div class="kpi-sub">${nReplay} clientes · <strong>${fmt(tmReplay)}/câm</strong> ticket médio</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Transmissão</div>
+        <div class="kpi-value">${fmtK(totTrans)}</div>
+        <div class="kpi-sub">${nTrans} clientes · <strong>${fmt(tmTrans)}/câm</strong> ticket médio</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Placar</div>
+        <div class="kpi-value">${totPlacar>0?fmtK(totPlacar):'—'}</div>
+        <div class="kpi-sub">${nPlacar} cliente${nPlacar!==1?'s':''} · ${tmPlacar>0?'<strong>'+fmt(tmPlacar)+'</strong>/câm ticket médio':'sem dados'}</div>
+      </div>
+      ${totComanda>0||nComanda>0?`<div class="kpi-card">
+        <div class="kpi-label">G. Comanda</div>
+        <div class="kpi-value">${totComanda>0?fmtK(totComanda):'—'}</div>
+        <div class="kpi-sub">${nComanda} cliente${nComanda!==1?'s':''}</div>
+      </div>`:''}
+      ${totProf>0||nProf>0?`<div class="kpi-card">
+        <div class="kpi-label">G. Professores</div>
+        <div class="kpi-value">${totProf>0?fmtK(totProf):'—'}</div>
+        <div class="kpi-sub">${nProf} cliente${nProf!==1?'s':''}</div>
+      </div>`:''}
     </div>
 
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title"><div class="card-title-left">📊 Adoção por Serviço</div><span class="card-sub">Nº de clientes</span></div>
-        <div class="chart-container" style="height:200px"><canvas id="chart-svc-adocao"></canvas></div>
+        <div class="card-title"><div class="card-title-left">💰 Receita Total por Serviço</div><span class="card-sub">R$ total</span></div>
+        <div class="chart-container" style="height:200px"><canvas id="chart-svc-total"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title"><div class="card-title-left">💰 Preço Médio por Serviço</div><span class="card-sub">Entre clientes que têm o serviço</span></div>
-        <div class="chart-container" style="height:200px"><canvas id="chart-svc-preco"></canvas></div>
+        <div class="card-title"><div class="card-title-left">📊 Ticket Médio por Câmera</div><span class="card-sub">Total serviço ÷ câmeras dos clientes com o serviço</span></div>
+        <div class="chart-container" style="height:200px"><canvas id="chart-svc-tm"></canvas></div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-title">
         <div class="card-title-left">🏷️ Detalhe por Cliente</div>
-        <span class="card-sub">Serviços · Valores · Câmeras · Total</span>
+        <span class="card-sub">Total por serviço · valor/câmera em cinza</span>
       </div>
       <div class="table-wrap"><table>
         <thead><tr>
           <th>Cliente</th>
-          <th>Serviços</th>
+          <th class="text-center">Câmeras</th>
           <th class="text-right">Replay</th>
           <th class="text-right">Transmissão</th>
           <th class="text-right">Placar</th>
-          <th class="text-right">Comanda</th>
-          <th class="text-right">Professores</th>
-          <th class="text-center">Câmeras</th>
+          <th class="text-right">G. Comanda</th>
+          <th class="text-right">G. Professores</th>
           <th class="text-right">Total</th>
-          <th class="text-right">R$/câm</th>
         </tr></thead>
         <tbody>${clienteRows}</tbody>
         <tfoot><tr class="total-row">
-          <td><strong>MÉDIA/TOTAL</strong></td>
-          <td></td>
-          <td class="text-right fw-bold font-mono">${clienteProduto.filter(c=>c.replay).length>0?fmt(totReplay/clienteProduto.filter(c=>c.replay).length):'—'}</td>
-          <td class="text-right fw-bold font-mono">${clienteProduto.filter(c=>c.transmissao).length>0?fmt(totTrans/clienteProduto.filter(c=>c.transmissao).length):'—'}</td>
-          <td class="text-right fw-bold font-mono">${clienteProduto.filter(c=>c.placar).length>0?fmt(totPlacar/clienteProduto.filter(c=>c.placar).length):'—'}</td>
-          <td class="text-right fw-bold font-mono">${clienteProduto.filter(c=>c.comanda).length>0?fmt(totComanda/clienteProduto.filter(c=>c.comanda).length):'—'}</td>
-          <td class="text-right fw-bold font-mono">${clienteProduto.filter(c=>c.professores).length>0?fmt(totProf/clienteProduto.filter(c=>c.professores).length):'—'}</td>
+          <td><strong>TOTAL</strong></td>
           <td class="text-center fw-bold">${totalCams}</td>
-          <td class="text-right fw-bold font-mono" style="color:#f97316">${fmtK(totGeral)}</td>
-          <td class="text-right font-mono" style="color:#64748b;font-size:12px">${fmt(avgPorCam)}</td>
+          <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(totReplay)}<br><span style="color:#94a3b8;font-size:11px">${fmt(tmReplay)}/câm</span></td>
+          <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(totTrans)}<br><span style="color:#94a3b8;font-size:11px">${fmt(tmTrans)}/câm</span></td>
+          <td class="text-right fw-bold font-mono" style="color:#f97316">${totPlacar>0?fmt(totPlacar):'—'}${tmPlacar>0?'<br><span style="color:#94a3b8;font-size:11px">'+fmt(tmPlacar)+'/câm</span>':''}</td>
+          <td class="text-right fw-bold font-mono">${totComanda>0?fmt(totComanda):'—'}</td>
+          <td class="text-right fw-bold font-mono">${totProf>0?fmt(totProf):'—'}</td>
+          <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(totGeral)}</td>
         </tr></tfoot>
       </table></div>
     </div>
   `;
 
   setTimeout(()=>{
-    new Chart(document.getElementById('chart-svc-adocao'),{type:'bar',data:{
+    new Chart(document.getElementById('chart-svc-total'),{type:'bar',data:{
       labels:svcLabels,
-      datasets:[{label:'Clientes',data:svcCounts,backgroundColor:['#f97316','#ea580c','#fbbf24','#0ea5e9','#a855f7'],borderRadius:8}]
-    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} clientes`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},stepSize:1}}}}});
+      datasets:[{label:'Receita',data:svcTotais,backgroundColor:svcColors,borderRadius:8}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}}}}});
 
-    new Chart(document.getElementById('chart-svc-preco'),{type:'bar',data:{
+    new Chart(document.getElementById('chart-svc-tm'),{type:'bar',data:{
       labels:svcLabels,
-      datasets:[{label:'Preço médio',data:svcAvgs,backgroundColor:['#f97316','#ea580c','#fbbf24','#0ea5e9','#a855f7'],borderRadius:8}]
-    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+v}}}}});
+      datasets:[{label:'Ticket médio/câm',data:svcTM.map(v=>Math.round(v*100)/100),backgroundColor:svcColors,borderRadius:8}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}/câmera`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+v}}}}});
   },50);
 }
 
