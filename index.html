@@ -1198,7 +1198,7 @@ function buildImplantacao(){
     const roi = r.cobrado - r.gasto;
     const mg  = r.cobrado > 0 ? Math.round((roi/r.cobrado)*100) : 0;
     const gastoCell = r.gasto > 0 ? fmt(r.gasto) : '<span style="color:#94a3b8">—</span>';
-    const mgCls = mg >= 50 ? 'chip-up' : mg >= 0 ? 'chip-warn' : 'chip-down';
+    const mgCls = mg >= 0 ? 'chip-up' : 'chip-down';
     return `<tr>
       <td class="fw-bold">${r.clube}</td>
       <td class="text-right fw-bold font-mono" style="color:#0f172a">${fmt(r.cobrado)}</td>
@@ -1260,7 +1260,7 @@ function buildImplantacao(){
         <div class="kpi-label">Saldo · Margem</div>
         <div class="kpi-value" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmtK(totalROI)}</div>
         <div class="kpi-sub">Cobrado − Gasto</div>
-        <span class="kpi-chip ${margem>=50?'chip-up':margem>=0?'chip-warn':'chip-down'}">${margem}% margem</span>
+        <span class="kpi-chip ${margem>=0?'chip-up':'chip-down'}">${margem}% margem</span>
       </div>
     </div>
 
@@ -1285,7 +1285,7 @@ function buildImplantacao(){
             <td class="text-right fw-bold font-mono">${fmt(totalCobrado)}</td>
             <td class="text-right fw-bold font-mono">${totalGasto>0?fmt(totalGasto):'—'}</td>
             <td class="text-right fw-bold font-mono" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmt(totalROI)}</td>
-            <td class="text-center"><span class="kpi-chip ${margem>=50?'chip-up':margem>=0?'chip-warn':'chip-down'}">${margem}%</span></td>
+            <td class="text-center"><span class="kpi-chip ${margem>=0?'chip-up':'chip-down'}">${margem}%</span></td>
           </tr></tfoot>
         </table></div>
       </div>
