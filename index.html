@@ -1415,19 +1415,19 @@ function buildClienteProdutoFromCSV(text) {
     if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media') || clube.toLowerCase().includes('total')) continue;
     // Columns (from image): A=Clube B=Replay C=Valor D=Transmissão E=Valor F=Placar G=Valor H=Comanda I=Valor J=Professores K=Valor L=Nº câmeras
     // 0=Clube 1=Replay 2=pcReplay 3=Transmissão 4=pcTrans 5=Placar 6=pcPlacar 7=Comanda 8=pcComanda 9=Professores 10=pcProf 11=cameras
-    const cameras = parseInt(cols[11]||'0')||0;
+    const cameras = parseInt(cols[15]||'0')||0;
     const pcReplay  = parseMoney(cols[2]||'');
-    const pcTrans   = parseMoney(cols[4]||'');
-    const pcPlacar  = parseMoney(cols[6]||'');
-    const pcComanda = parseMoney(cols[8]||'');
-    const pcProf    = parseMoney(cols[10]||'');
+    const pcTrans   = parseMoney(cols[5]||'');
+    const pcPlacar  = parseMoney(cols[8]||'');
+    const pcComanda = parseMoney(cols[11]||'');
+    const pcProf    = parseMoney(cols[14]||'');
     data.push({
       clube, cameras,
-      replay:      isBool(cols[1]), pcReplay,  valorReplay:      pcReplay  * cameras,
-      transmissao: isBool(cols[3]), pcTrans,   valorTransmissao: pcTrans   * cameras,
-      placar:      isBool(cols[5]), pcPlacar,  valorPlacar:      pcPlacar  * cameras,
-      comanda:     isBool(cols[7]), pcComanda, valorComanda:     pcComanda * cameras,
-      professores: isBool(cols[9]), pcProf,    valorProfessores: pcProf    * cameras,
+      replay:      isBool(cols[1]),  pcReplay,  valorReplay:      pcReplay  * cameras,
+      transmissao: isBool(cols[4]),  pcTrans,   valorTransmissao: pcTrans   * cameras,
+      placar:      isBool(cols[7]),  pcPlacar,  valorPlacar:      pcPlacar  * cameras,
+      comanda:     isBool(cols[10]), pcComanda, valorComanda:     pcComanda * cameras,
+      professores: isBool(cols[13]), pcProf,    valorProfessores: pcProf    * cameras,
     });
   }
   return data;
