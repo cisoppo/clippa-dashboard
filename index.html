@@ -701,6 +701,10 @@ function buildVisaoGeral(){
   const estados={};
   contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>{estados[c.estado]=(estados[c.estado]||0)+c.mrr;});
 
+  // Por cidade
+  const cidades={};
+  contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>{if(c.cidade)cidades[c.cidade]=(cidades[c.cidade]||0)+c.mrr;});
+
   // Concentração: top 5 clientes
   const topAll=[...contratos].filter(c=>getMRRStatus(c)!=='futuro').sort((a,b)=>b.mrr-a.mrr);
   const top5=topAll.slice(0,5);
@@ -744,6 +748,10 @@ function buildVisaoGeral(){
         <div class="chart-container" style="height:180px"><canvas id="chart-concentracao"></canvas></div>
       </div>
     </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title"><div class="card-title-left">📍 MRR por Cidade</div><span class="card-sub">Clientes ativos</span></div>
+      <div class="chart-container" style="height:220px"><canvas id="chart-cidade"></canvas></div>
+    </div>
     <div class="grid-2">
       <div class="card">
         <div class="card-title"><div class="card-title-left">🏅 Top Clientes por MRR</div></div>
@@ -782,17 +790,29 @@ function buildVisaoGeral(){
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:false,grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}}}}});
 
     // Esporte Chart
+    const espTotal=Object.values(esportes).reduce((s,v)=>s+v,0);
     new Chart(document.getElementById('chart-esporte'),{type:'doughnut',data:{
       labels:Object.keys(esportes),
       datasets:[{data:Object.values(esportes),backgroundColor:['#f97316','#ea580c','#fbbf24','#fed7aa'],borderWidth:2,borderColor:'#fff'}]
-    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}`}}}}});
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')} (${espTotal>0?Math.round((ctx.raw/espTotal)*100):0}%)`}}}}};
 
     // Estado Chart
     const estadoLabels=Object.keys(estados), estadoVals=Object.values(estados);
+    const estTotal=estadoVals.reduce((s,v)=>s+v,0);
     new Chart(document.getElementById('chart-estado'),{type:'bar',data:{
       labels:estadoLabels,
       datasets:[{label:'MRR',data:estadoVals,backgroundColor:['#f97316','#ea580c','#fbbf24'].slice(0,estadoLabels.length),borderRadius:8}]
     },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}`}}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}},y:{grid:{display:false},ticks:{font:{size:12,weight:'700'}}}}}});
+
+    // Cidade Chart
+    const cidadeEntries=Object.entries(cidades).sort((a,b)=>b[1]-a[1]);
+    const cidadeLabels=cidadeEntries.map(e=>e[0]), cidadeVals=cidadeEntries.map(e=>e[1]);
+    const cidTotal=cidadeVals.reduce((s,v)=>s+v,0);
+    const cidColors=['#f97316','#ea580c','#fbbf24','#fed7aa','#fb923c','#fdba74','#c2410c','#9a3412'];
+    new Chart(document.getElementById('chart-cidade'),{type:'bar',data:{
+      labels:cidadeLabels,
+      datasets:[{label:'MRR',data:cidadeVals,backgroundColor:cidColors.slice(0,cidadeLabels.length),borderRadius:8}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')} (${cidTotal>0?Math.round((ctx.raw/cidTotal)*100):0}%)`}}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}},y:{grid:{display:false},ticks:{font:{size:12,weight:'600'}}}}}}}});
 
     // Concentração Chart
     const concLabels=[...top5.map(c=>c.clube.split(' ')[0]+(top5.length>1?'...':'')),outrosMRR>0?'Outros':''].filter(Boolean);
