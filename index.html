@@ -1469,6 +1469,30 @@ function buildClienteProduto() {
   const svcCounts = [nReplay,nTrans,nPlacar,nComanda,nProf];
   const svcTM     = [tmReplay,tmTrans,tmPlacar,tmComanda,tmProf];
 
+  // Alocação ponderada (regras da planilha)
+  // replay+trans = 80% replay + 20% trans
+  // replay+trans+placar = 50% replay + 20% trans + 30% placar
+  let wReplay=0, wTrans=0, wPlacar=0;
+  clienteProduto.forEach(c => {
+    const tot = c.valorReplay + c.valorTransmissao + c.valorPlacar + c.valorComanda + c.valorProfessores;
+    if(c.replay && c.transmissao && c.placar) {
+      wReplay += tot * 0.50;
+      wTrans  += tot * 0.20;
+      wPlacar += tot * 0.30;
+    } else if(c.replay && c.transmissao) {
+      wReplay += tot * 0.80;
+      wTrans  += tot * 0.20;
+    } else {
+      // fallback: proporcional ao valor real
+      wReplay += c.valorReplay;
+      wTrans  += c.valorTransmissao;
+      wPlacar += c.valorPlacar;
+    }
+  });
+  const wTmReplay = totalCams>0 ? wReplay/totalCams : 0;
+  const wTmTrans  = totalCams>0 ? wTrans/totalCams  : 0;
+  const wTmPlacar = camPlacar>0 ? wPlacar/camPlacar : 0;
+
   // Rows
   const clienteRows = clienteProduto.map(c => {
     const tags = [];
@@ -1535,6 +1559,31 @@ function buildClienteProduto() {
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">
+        <div class="card-title-left">⚖️ Alocação Ponderada de Receita</div>
+        <span class="card-sub">80% Replay · 20% Trans · ou 50/20/30 com Placar</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Replay (ponderado)</div>
+          <div class="kpi-value">${fmtK(wReplay)}</div>
+          <div class="kpi-sub"><strong>${fmt(wTmReplay)}/câm</strong> ticket médio · ${totalCams} câmeras</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Transmissão (ponderada)</div>
+          <div class="kpi-value">${fmtK(wTrans)}</div>
+          <div class="kpi-sub"><strong>${fmt(wTmTrans)}/câm</strong> ticket médio · ${totalCams} câmeras</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Placar (ponderado)</div>
+          <div class="kpi-value">${wPlacar>0?fmtK(wPlacar):'—'}</div>
+          <div class="kpi-sub">${wTmPlacar>0?'<strong>'+fmt(wTmPlacar)+'</strong>/câm ticket médio · '+camPlacar+' câmeras':'apenas clientes com Placar'}</div>
+        </div>
+      </div>
+      <div class="chart-container" style="height:180px;margin-top:12px"><canvas id="chart-ponderado"></canvas></div>
+    </div>
+
     <div class="card">
       <div class="card-title">
         <div class="card-title-left">🏷️ Detalhe por Cliente</div>
@@ -1571,6 +1620,14 @@ function buildClienteProduto() {
       labels:svcLabels,
       datasets:[{label:'Receita',data:svcTotais,backgroundColor:svcColors,borderRadius:8}]
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.raw.toLocaleString('pt-BR')}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}}}}});
+
+    new Chart(document.getElementById('chart-ponderado'),{type:'bar',data:{
+      labels:['Replay','Transmissão','Placar'],
+      datasets:[
+        {label:'Receita bruta',data:[totReplay,totTrans,totPlacar],backgroundColor:'#fed7aa',borderRadius:4},
+        {label:'Alocação ponderada',data:[wReplay,wTrans,wPlacar],backgroundColor:['#f97316','#ea580c','#fbbf24'],borderRadius:4}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: R$ ${Math.round(ctx.raw).toLocaleString('pt-BR')}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>'R$'+(v/1000).toFixed(1)+'k'}}}}});
 
     new Chart(document.getElementById('chart-svc-tm'),{type:'bar',data:{
       labels:svcLabels,
