@@ -695,7 +695,7 @@ function buildVisaoGeral(){
 
   // Por esporte
   const esportes={};
-  contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>c.esportes.forEach(e=>{esportes[e]=(esportes[e]||0)+c.mrr;}));
+  contratos.filter(c=>getMRRStatus(c)==='ativo').forEach(c=>{const share=c.mrr/(c.esportes.length||1);c.esportes.forEach(e=>{esportes[e]=(esportes[e]||0)+share;});});
 
   // Por estado
   const estados={};
