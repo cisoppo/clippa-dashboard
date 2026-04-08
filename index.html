@@ -300,6 +300,9 @@
   <button class="nav-item" onclick="switchTab('estoque')">
     <span class="nav-icon">📦</span><span class="nav-label"> Estoque</span>
   </button>
+  <button class="nav-item" onclick="switchTab('implantacao')">
+    <span class="nav-icon">🔧</span><span class="nav-label"> Implantação</span>
+  </button>
 
   <div class="sidebar-footer">
     <span id="header-date"></span>
@@ -325,6 +328,7 @@
       <div id="renovacoes"   class="tab-pane"></div>
       <div id="projecao"     class="tab-pane"></div>
       <div id="estoque"      class="tab-pane"></div>
+      <div id="implantacao"  class="tab-pane"></div>
     </main>
   </div>
 
@@ -338,12 +342,14 @@ const SHEET_ID         = '1HugA1FjzNBMlKNpr-j9pyqk_94rLSfkRIvQKQ1lTkrA';
 const GID_CONTRATOS    = '1516194585';
 const GID_RECEBIMENTOS = '1616219438';
 const GID_ESTOQUE      = '23632109';
+const GID_IMPL_PARCELAS = '537145439';
+const GID_IMPL_RESUMO   = '900572378';
 
 // ═══════════════════════════════════════════
 // ESTADO GLOBAL
 // ═══════════════════════════════════════════
 const TODAY = new Date();
-let contratos = [], PAG = {}, estoque = [];
+let contratos = [], PAG = {}, estoque = [], implParcelas = [], implResumo = [];
 
 const MESES_KEYS  = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -501,6 +507,58 @@ function buildEstoqueFromCSV(rows) {
   }));
 }
 
+function buildImplParcelasFromCSV(rows) {
+  const result = [];
+  const MES_NOMES = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const MES_KEYS  = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  let currentMes = null;
+
+  // Detect flat format: has a column that looks like "Mês" or "Mes"
+  const hasMesCol = rows.length > 0 && Object.keys(rows[0]).some(k => normStr(k) === 'mes' || normStr(k) === 'mes');
+
+  rows.forEach(row => {
+    const vals = Object.values(row);
+    const firstVal = normStr(vals[0] || '');
+
+    // Check if this row is a month section header
+    const mesIdx = MES_NOMES.findIndex(m => firstVal === m);
+    if (mesIdx >= 0) { currentMes = MES_KEYS[mesIdx]; return; }
+
+    // Check if any column key contains a month (flat format)
+    const keys = Object.keys(row);
+    const mesKey = hasMesCol ? keys.find(k => normStr(k) === 'mes' || normStr(k) === 'mes') : null;
+    if (mesKey) {
+      const mVal = normStr(row[mesKey] || '');
+      const mi = MES_NOMES.findIndex(m => mVal === m);
+      if (mi >= 0) currentMes = MES_KEYS[mi];
+    }
+
+    const clube = (row['Clube'] || vals[0] || '').trim();
+    const valor = parseMoney(row['Valor'] || vals[1] || '');
+    const parcela = (row['Parcela'] || vals[2] || '').trim();
+
+    if (clube && valor > 0 && currentMes && !MES_NOMES.includes(normStr(clube))) {
+      result.push({ mes: currentMes, clube, valor, parcela });
+    }
+  });
+  return result;
+}
+
+function buildImplResumoFromCSV(rows) {
+  return rows.filter(r => {
+    const clube = (r['Clube'] || Object.values(r)[0] || '').trim();
+    return clube && normStr(clube) !== 'clube' && normStr(clube) !== 'total';
+  }).map(row => {
+    const vals = Object.values(row);
+    return {
+      clube:   (row['Clube']         || vals[0] || '').trim(),
+      cobrado: parseMoney(row['Valor Cobrado'] || vals[1] || ''),
+      gasto:   parseMoney(row['Valor Gasto']   || vals[2] || ''),
+      roi:     parseMoney(row['ROI']            || vals[3] || ''),
+    };
+  }).filter(r => r.cobrado > 0 || r.gasto > 0);
+}
+
 // ═══════════════════════════════════════════
 // LOAD DATA
 // ═══════════════════════════════════════════
@@ -509,21 +567,25 @@ async function loadData() {
   document.getElementById('main-content').style.display='none';
   const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
   try {
-    const [r1,r2,r3]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE)]);
-    const [t1,t2,t3]=await Promise.all([r1.text(),r2.text(),r3.text()]);
-    const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3);
+    const [r1,r2,r3,r4,r5]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE),fetch(base+GID_IMPL_PARCELAS),fetch(base+GID_IMPL_RESUMO)]);
+    const [t1,t2,t3,t4,t5]=await Promise.all([r1.text(),r2.text(),r3.text(),r4.text(),r5.text()]);
+    const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3), csvIP=parseCSV(t4), csvIR=parseCSV(t5);
     console.log('[Clippa] Contratos CSV:',csvC.length,'| row[0]:',JSON.stringify(csvC[0]));
     console.log('[Clippa] Receb CSV:',csvR.length,'| row[0]:',JSON.stringify(csvR[0]));
     console.log('[Clippa] Estoque CSV:',csvE.length,'| row[0]:',JSON.stringify(csvE[0]));
+    console.log('[Clippa] ImplParcelas CSV:',csvIP.length,'| row[0]:',JSON.stringify(csvIP[0]));
+    console.log('[Clippa] ImplResumo CSV:',csvIR.length,'| row[0]:',JSON.stringify(csvIR[0]));
     contratos=buildContratosFromCSV(csvC);
     PAG=buildPAGFromCSV(csvR.filter(r=>normStr(r['Clube']||'')!=='total'),contratos);
     estoque=buildEstoqueFromCSV(csvE);
-    console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length);
+    implParcelas=buildImplParcelasFromCSV(csvIP);
+    implResumo=buildImplResumoFromCSV(csvIR);
+    console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length,'| ImplParcelas:',implParcelas.length,'| ImplResumo:',implResumo.length);
     document.getElementById('header-date').textContent=
       'Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+
       TODAY.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     builtTabs={};
-    ['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque'].forEach(id=>{
+    ['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao'].forEach(id=>{
       document.getElementById(id).innerHTML='';
       document.getElementById(id).classList.remove('active');
     });
@@ -1096,10 +1158,175 @@ function buildEstoque(){
 }
 
 // ═══════════════════════════════════════════
+// TAB: IMPLANTAÇÃO
+// ═══════════════════════════════════════════
+function buildImplantacao(){
+  const el = document.getElementById('implantacao');
+
+  // KPIs from resumo
+  const totalCobrado = implResumo.reduce((s,r)=>s+r.cobrado,0);
+  const totalGasto   = implResumo.reduce((s,r)=>s+r.gasto,0);
+  const totalROI     = totalCobrado - totalGasto;
+  const margem       = totalCobrado > 0 ? Math.round((totalROI/totalCobrado)*100) : 0;
+
+  // Months that have parcela entries
+  const MES_ORDER = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const MES_LABEL_MAP = {jan:'Jan',fev:'Fev',mar:'Mar',abr:'Abr',mai:'Mai',jun:'Jun',jul:'Jul',ago:'Ago',set:'Set',out:'Out',nov:'Nov',dez:'Dez'};
+  const mesesAtivos = MES_ORDER.filter(m => implParcelas.some(p => p.mes === m));
+
+  // Clubs with parcelas
+  const clubesParcelas = [...new Set(implParcelas.map(p => p.clube))];
+
+  // Build parcelas grid per clube per mes
+  function getCelula(clube, mes) {
+    const entry = implParcelas.find(p => p.clube === clube && p.mes === mes);
+    if (!entry) return '<span class="pay-vazio">—</span>';
+    const parcelaLabel = entry.parcela ? `<span style="font-size:10px;color:#94a3b8;display:block">${entry.parcela}</span>` : '';
+    return `<span class="pay-cell pay-pago">${fmt(entry.valor)}${parcelaLabel}</span>`;
+  }
+
+  // Resumo table rows
+  const resumoRows = implResumo.map(r => {
+    const roi = r.cobrado - r.gasto;
+    const mg  = r.cobrado > 0 ? Math.round((roi/r.cobrado)*100) : 0;
+    const gastoCell = r.gasto > 0 ? fmt(r.gasto) : '<span style="color:#94a3b8">—</span>';
+    const mgCls = mg >= 50 ? 'chip-up' : mg >= 0 ? 'chip-warn' : 'chip-down';
+    return `<tr>
+      <td class="fw-bold">${r.clube}</td>
+      <td class="text-right fw-bold font-mono" style="color:#0f172a">${fmt(r.cobrado)}</td>
+      <td class="text-right font-mono">${gastoCell}</td>
+      <td class="text-right fw-bold font-mono" style="color:${roi>=0?'#15803d':'#b91c1c'}">${fmt(roi)}</td>
+      <td class="text-center"><span class="kpi-chip ${mgCls}">${mg}%</span></td>
+    </tr>`;
+  }).join('');
+
+  // Parcelas table rows
+  const parcelasRows = clubesParcelas.map(clube => {
+    const totalClube = implParcelas.filter(p=>p.clube===clube).reduce((s,p)=>s+p.valor,0);
+    const cells = mesesAtivos.map(m => `<td class="text-center">${getCelula(clube,m)}</td>`).join('');
+    return `<tr>
+      <td class="fw-bold">${clube}</td>
+      ${cells}
+      <td class="text-right fw-bold font-mono" style="color:#f97316">${fmt(totalClube)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPorMes = mesesAtivos.map(m => {
+    const t = implParcelas.filter(p=>p.mes===m).reduce((s,p)=>s+p.valor,0);
+    return `<td class="text-right fw-bold font-mono">${t>0?fmt(t):'—'}</td>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Cobrado</div>
+        <div class="kpi-value">${fmtK(totalCobrado)}</div>
+        <div class="kpi-sub">Setup + implantação</div>
+      </div>
+      <div class="kpi-card ${totalGasto>0?'amber':'green'}">
+        <div class="kpi-label">Total Gasto</div>
+        <div class="kpi-value">${totalGasto>0?fmtK(totalGasto):'—'}</div>
+        <div class="kpi-sub">Custo de instalação</div>
+      </div>
+      <div class="kpi-card ${totalROI>=0?'green':'red'}">
+        <div class="kpi-label">ROI Total</div>
+        <div class="kpi-value" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmtK(totalROI)}</div>
+        <div class="kpi-sub">Cobrado − Gasto</div>
+      </div>
+      <div class="kpi-card ${margem>=50?'green':margem>=0?'amber':'red'}">
+        <div class="kpi-label">Margem Média</div>
+        <div class="kpi-value" style="color:${margem>=50?'#15803d':margem>=0?'#c2410c':'#b91c1c'}">${margem}%</div>
+        <div class="kpi-sub">Sobre implantações registradas</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">💰 Cobrado vs Gasto por Cliente</div></div>
+        <div class="chart-container" style="height:240px"><canvas id="chart-impl-barras"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="card-title-left">📋 Resumo por Cliente</div><span class="card-sub">Cobrado · Gasto · ROI · Margem</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>Cliente</th>
+            <th class="text-right">Cobrado</th>
+            <th class="text-right">Gasto</th>
+            <th class="text-right">ROI</th>
+            <th class="text-center">Margem</th>
+          </tr></thead>
+          <tbody>${resumoRows}</tbody>
+          <tfoot><tr class="total-row">
+            <td><strong>TOTAL</strong></td>
+            <td class="text-right fw-bold font-mono">${fmt(totalCobrado)}</td>
+            <td class="text-right fw-bold font-mono">${totalGasto>0?fmt(totalGasto):'—'}</td>
+            <td class="text-right fw-bold font-mono" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmt(totalROI)}</td>
+            <td class="text-center"><span class="kpi-chip ${margem>=50?'chip-up':margem>=0?'chip-warn':'chip-down'}">${margem}%</span></td>
+          </tr></tfoot>
+        </table></div>
+      </div>
+    </div>
+
+    ${mesesAtivos.length > 0 ? `
+    <div class="card">
+      <div class="card-title"><div class="card-title-left">📅 Cronograma de Recebimento de Parcelas</div><span class="card-sub">Taxas de implantação parceladas</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Cliente</th>
+          ${mesesAtivos.map(m=>`<th class="text-center">${MES_LABEL_MAP[m]}</th>`).join('')}
+          <th class="text-right">Total</th>
+        </tr></thead>
+        <tbody>${parcelasRows}</tbody>
+        <tfoot><tr class="total-row">
+          <td><strong>TOTAL/MÊS</strong></td>
+          ${totalPorMes}
+          <td class="text-right fw-bold font-mono">${fmt(implParcelas.reduce((s,p)=>s+p.valor,0))}</td>
+        </tr></tfoot>
+      </table></div>
+    </div>` : `<div class="card"><div class="obs gray">Nenhum dado de parcelas encontrado ainda.</div></div>`}
+
+    ${implResumo.length === 0 && implParcelas.length === 0 ? `
+    <div class="card" style="text-align:center;padding:40px">
+      <div style="font-size:32px;margin-bottom:12px">🔧</div>
+      <div style="font-weight:700;color:#0f172a">Sem dados de implantação</div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px">Preencha as abas da planilha para visualizar aqui.</div>
+    </div>` : ''}
+  `;
+
+  setTimeout(()=>{
+    const chartEl = document.getElementById('chart-impl-barras');
+    if (!chartEl || implResumo.length === 0) return;
+    const labels = implResumo.map(r => r.clube.split(' ')[0]);
+    new Chart(chartEl, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Cobrado',  data: implResumo.map(r=>r.cobrado), backgroundColor: '#f97316', borderRadius: 6 },
+          { label: 'Gasto',    data: implResumo.map(r=>r.gasto),   backgroundColor: '#ef4444', borderRadius: 6 },
+          { label: 'ROI',      data: implResumo.map(r=>r.cobrado-r.gasto), backgroundColor: '#22c55e', borderRadius: 6 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+          y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => 'R$'+(v/1000).toFixed(1)+'k', font: { size: 11 } } }
+        }
+      }
+    });
+  }, 50);
+}
+
+// ═══════════════════════════════════════════
 // TAB SWITCHER
 // ═══════════════════════════════════════════
 let builtTabs={};
-const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque'];
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao'];
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
@@ -1114,6 +1341,7 @@ function switchTab(id){
     if(id==='renovacoes')   buildRenovacoes();
     if(id==='projecao')     buildProjecao();
     if(id==='estoque')      buildEstoque();
+    if(id==='implantacao')  buildImplantacao();
   }
 }
 
