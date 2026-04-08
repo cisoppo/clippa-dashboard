@@ -1257,7 +1257,7 @@ function buildImplantacao(){
         <div class="kpi-sub">Custo de instalação</div>
       </div>
       <div class="kpi-card ${totalROI>=0?'green':'red'}">
-        <div class="kpi-label">ROI · Margem</div>
+        <div class="kpi-label">Saldo · Margem</div>
         <div class="kpi-value" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmtK(totalROI)}</div>
         <div class="kpi-sub">Cobrado − Gasto</div>
         <span class="kpi-chip ${margem>=50?'chip-up':margem>=0?'chip-warn':'chip-down'}">${margem}% margem</span>
@@ -1270,13 +1270,13 @@ function buildImplantacao(){
         <div class="chart-container" style="height:240px"><canvas id="chart-impl-barras"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title"><div class="card-title-left">📋 Resumo por Cliente</div><span class="card-sub">Cobrado · Gasto · ROI · Margem</span></div>
+        <div class="card-title"><div class="card-title-left">📋 Resumo por Cliente</div><span class="card-sub">Cobrado · Gasto · Saldo · Margem</span></div>
         <div class="table-wrap"><table>
           <thead><tr>
             <th>Cliente</th>
             <th class="text-right">Cobrado</th>
             <th class="text-right">Gasto</th>
-            <th class="text-right">ROI</th>
+            <th class="text-right">Saldo</th>
             <th class="text-center">Margem</th>
           </tr></thead>
           <tbody>${resumoRows}</tbody>
@@ -1328,7 +1328,7 @@ function buildImplantacao(){
         datasets: [
           { label: 'Cobrado',  data: implResumo.map(r=>r.cobrado), backgroundColor: '#f97316', borderRadius: 6 },
           { label: 'Gasto',    data: implResumo.map(r=>r.gasto),   backgroundColor: '#ef4444', borderRadius: 6 },
-          { label: 'ROI',      data: implResumo.map(r=>r.cobrado-r.gasto), backgroundColor: '#22c55e', borderRadius: 6 },
+          { label: 'Saldo',    data: implResumo.map(r=>r.cobrado-r.gasto), backgroundColor: '#22c55e', borderRadius: 6 },
         ]
       },
       options: {
