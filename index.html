@@ -1396,40 +1396,46 @@ function buildImplantacao(){
 // CLIENTE vs PRODUTO PARSER
 // ═══════════════════════════════════════════
 function buildClienteProdutoFromCSV(text) {
-  // Parse raw CSV by position (sheet has duplicate "Valor" column names)
+  // Parse raw CSV by position using the TOTAL formula columns already in the sheet
+  // Col indices: 0=Clube 1=Replay(bool) 2=pcReplay 3=totalReplay 4=Trans(bool) 5=pcTrans 6=totalTrans
+  //              7=Placar(bool) 8=pcPlacar 9=totalPlacar 10=Comanda(bool) 11=pcComanda 12=totalComanda
+  //              13=Professores(bool) 14=totalProfessores 15=cameras 16=totalGeral
+  // Note: Comanda and Professores are flat per club (not per camera)
   text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
   const lines = text.trim().split('\n').filter(l=>l.trim());
-  // Find data start: skip rows until we find "Clube" in first cell, then skip that row too
   let dataStart = 0;
   for(let i=0;i<lines.length;i++){
-    const first = (parseCSVLine(lines[i])[0]||'').trim().toLowerCase();
-    if(first==='clube'){ dataStart=i+1; break; }
-    // Also skip empty first rows
-    if(first===''&&i===0){ dataStart=1; }
+    const cols0 = (parseCSVLine(lines[i])[0]||'').trim().toLowerCase();
+    if(cols0==='clube'){ dataStart=i+1; break; }
   }
+  console.log('[CP] dataStart='+dataStart+' sample line:', lines[dataStart]);
   const isBool = v => (v||'').toString().toUpperCase()==='TRUE';
   const data = [];
   for(let i=dataStart;i<lines.length;i++){
     const cols = parseCSVLine(lines[i]);
     const clube = (cols[0]||'').trim();
     if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media') || clube.toLowerCase().includes('total')) continue;
-    // Columns (from image): A=Clube B=Replay C=Valor D=Transmissão E=Valor F=Placar G=Valor H=Comanda I=Valor J=Professores K=Valor L=Nº câmeras
-    // 0=Clube 1=Replay 2=pcReplay 3=Transmissão 4=pcTrans 5=Placar 6=pcPlacar 7=Comanda 8=pcComanda 9=Professores 10=pcProf 11=cameras
     const cameras = parseInt(cols[15]||'0')||0;
     const pcReplay  = parseMoney(cols[2]||'');
     const pcTrans   = parseMoney(cols[5]||'');
     const pcPlacar  = parseMoney(cols[8]||'');
-    const pcComanda = parseMoney(cols[11]||'');
-    const pcProf    = parseMoney(cols[14]||'');
+    // Use total columns (formulas already calculate price × cameras)
+    const valorReplay      = parseMoney(cols[3]||'')  || pcReplay  * cameras;
+    const valorTransmissao = parseMoney(cols[6]||'')  || pcTrans   * cameras;
+    const valorPlacar      = parseMoney(cols[9]||'')  || pcPlacar  * cameras;
+    const valorComanda     = parseMoney(cols[12]||''); // flat per club
+    const valorProfessores = parseMoney(cols[14]||''); // flat per club
     data.push({
-      clube, cameras,
-      replay:      isBool(cols[1]),  pcReplay,  valorReplay:      pcReplay  * cameras,
-      transmissao: isBool(cols[4]),  pcTrans,   valorTransmissao: pcTrans   * cameras,
-      placar:      isBool(cols[7]),  pcPlacar,  valorPlacar:      pcPlacar  * cameras,
-      comanda:     isBool(cols[10]), pcComanda, valorComanda:     pcComanda * cameras,
-      professores: isBool(cols[13]), pcProf,    valorProfessores: pcProf    * cameras,
+      clube, cameras, pcReplay, pcTrans, pcPlacar,
+      replay:      isBool(cols[1])  || valorReplay>0,
+      transmissao: isBool(cols[4])  || valorTransmissao>0,
+      placar:      isBool(cols[7])  || valorPlacar>0,
+      comanda:     isBool(cols[10]) || valorComanda>0,
+      professores: isBool(cols[13]) || valorProfessores>0,
+      valorReplay, valorTransmissao, valorPlacar, valorComanda, valorProfessores,
     });
   }
+  console.log('[CP] parsed', data.length, 'clientes, sample:', JSON.stringify(data[0]));
   return data;
 }
 
