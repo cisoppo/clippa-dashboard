@@ -507,40 +507,42 @@ function buildEstoqueFromCSV(rows) {
   }));
 }
 
-function buildImplParcelasFromCSV(rows) {
+function buildImplParcelasFromRaw(text) {
+  // Wide-format CSV: months as column groups (Clube, Valor, Parcela% per month)
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = text.split('\n').filter(l => l.trim());
+  const MES_MAP = {
+    'marco':'mar','março':'mar','abril':'abr','maio':'mai','junho':'jun',
+    'julho':'jul','agosto':'ago','setembro':'set','outubro':'out',
+    'novembro':'nov','dezembro':'dez'
+  };
   const result = [];
-  const MES_NOMES = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  const MES_KEYS  = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  let currentMes = null;
 
-  // Detect flat format: has a column that looks like "Mês" or "Mes"
-  const hasMesCol = rows.length > 0 && Object.keys(rows[0]).some(k => normStr(k) === 'mes' || normStr(k) === 'mes');
-
-  rows.forEach(row => {
-    const vals = Object.values(row);
-    const firstVal = normStr(vals[0] || '');
-
-    // Check if this row is a month section header
-    const mesIdx = MES_NOMES.findIndex(m => firstVal === m);
-    if (mesIdx >= 0) { currentMes = MES_KEYS[mesIdx]; return; }
-
-    // Check if any column key contains a month (flat format)
-    const keys = Object.keys(row);
-    const mesKey = hasMesCol ? keys.find(k => normStr(k) === 'mes' || normStr(k) === 'mes') : null;
-    if (mesKey) {
-      const mVal = normStr(row[mesKey] || '');
-      const mi = MES_NOMES.findIndex(m => mVal === m);
-      if (mi >= 0) currentMes = MES_KEYS[mi];
+  // Find row with month names
+  let monthCols = {}, headerRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    const found = cols.some(c => MES_MAP[normStr(c)]);
+    if (found) {
+      headerRow = i;
+      cols.forEach((c, ci) => { if (MES_MAP[normStr(c)]) monthCols[ci] = MES_MAP[normStr(c)]; });
+      break;
     }
+  }
+  if (headerRow < 0) return result;
 
-    const clube = (row['Clube'] || vals[0] || '').trim();
-    const valor = parseMoney(row['Valor'] || vals[1] || '');
-    const parcela = (row['Parcela'] || vals[2] || '').trim();
-
-    if (clube && valor > 0 && currentMes && !MES_NOMES.includes(normStr(clube))) {
-      result.push({ mes: currentMes, clube, valor, parcela });
-    }
-  });
+  // Data rows start 2 rows after header (skip the Clube/Valor/Parcela sub-header row)
+  for (let i = headerRow + 2; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    Object.entries(monthCols).forEach(([ci, mes]) => {
+      const idx = parseInt(ci);
+      // Strip any leaked "N/M " prefix from clube cell
+      const clube = (cols[idx] || '').replace(/^\d+\/\d+\s+/, '').trim();
+      const valor = parseMoney(cols[idx + 1] || '');
+      const pct   = (cols[idx + 2] || '').trim();
+      if (clube && valor > 0) result.push({ mes, clube, valor, parcela: pct });
+    });
+  }
   return result;
 }
 
@@ -569,16 +571,15 @@ async function loadData() {
   try {
     const [r1,r2,r3,r4,r5]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE),fetch(base+GID_IMPL_PARCELAS),fetch(base+GID_IMPL_RESUMO)]);
     const [t1,t2,t3,t4,t5]=await Promise.all([r1.text(),r2.text(),r3.text(),r4.text(),r5.text()]);
-    const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3), csvIP=parseCSV(t4), csvIR=parseCSV(t5);
+    const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3), csvIR=parseCSV(t5);
     console.log('[Clippa] Contratos CSV:',csvC.length,'| row[0]:',JSON.stringify(csvC[0]));
     console.log('[Clippa] Receb CSV:',csvR.length,'| row[0]:',JSON.stringify(csvR[0]));
     console.log('[Clippa] Estoque CSV:',csvE.length,'| row[0]:',JSON.stringify(csvE[0]));
-    console.log('[Clippa] ImplParcelas CSV:',csvIP.length,'| row[0]:',JSON.stringify(csvIP[0]));
     console.log('[Clippa] ImplResumo CSV:',csvIR.length,'| row[0]:',JSON.stringify(csvIR[0]));
     contratos=buildContratosFromCSV(csvC);
     PAG=buildPAGFromCSV(csvR.filter(r=>normStr(r['Clube']||'')!=='total'),contratos);
     estoque=buildEstoqueFromCSV(csvE);
-    implParcelas=buildImplParcelasFromCSV(csvIP);
+    implParcelas=buildImplParcelasFromRaw(t4);
     implResumo=buildImplResumoFromCSV(csvIR);
     console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length,'| ImplParcelas:',implParcelas.length,'| ImplResumo:',implResumo.length);
     document.getElementById('header-date').textContent=
@@ -1169,6 +1170,13 @@ function buildImplantacao(){
   const totalROI     = totalCobrado - totalGasto;
   const margem       = totalCobrado > 0 ? Math.round((totalROI/totalCobrado)*100) : 0;
 
+  // Já recebido vs a receber (from parcelas)
+  const curMesIdx  = TODAY.getMonth(); // 0-based
+  const MES_IDX    = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
+  const jaRecebido = implParcelas.filter(p => (MES_IDX[p.mes]||0) <= curMesIdx).reduce((s,p)=>s+p.valor,0);
+  const aReceber   = implParcelas.filter(p => (MES_IDX[p.mes]||0) >  curMesIdx).reduce((s,p)=>s+p.valor,0);
+  const totalParcelas = implParcelas.reduce((s,p)=>s+p.valor,0);
+
   // Months that have parcela entries
   const MES_ORDER = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const MES_LABEL_MAP = {jan:'Jan',fev:'Fev',mar:'Mar',abr:'Abr',mai:'Mai',jun:'Jun',jul:'Jul',ago:'Ago',set:'Set',out:'Out',nov:'Nov',dez:'Dez'};
@@ -1217,26 +1225,42 @@ function buildImplantacao(){
   }).join('');
 
   el.innerHTML = `
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+      <div class="kpi-card green">
+        <div class="kpi-label">Já Recebido (parcelas)</div>
+        <div class="kpi-value" style="color:#15803d">${fmtK(jaRecebido)}</div>
+        <div class="kpi-sub">Parcelas até ${MESES_LABEL[curMesIdx]}</div>
+        <span class="kpi-chip chip-up">${totalParcelas>0?Math.round((jaRecebido/totalParcelas)*100):0}% do total parcelado</span>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">A Receber (parcelas)</div>
+        <div class="kpi-value" style="color:#c2410c">${fmtK(aReceber)}</div>
+        <div class="kpi-sub">Parcelas futuras pendentes</div>
+        <span class="kpi-chip chip-warn">${totalParcelas>0?Math.round((aReceber/totalParcelas)*100):0}% do total parcelado</span>
+      </div>
       <div class="kpi-card">
-        <div class="kpi-label">Total Cobrado</div>
+        <div class="kpi-label">Total Parcelado</div>
+        <div class="kpi-value">${fmtK(totalParcelas)}</div>
+        <div class="kpi-sub">${[...new Set(implParcelas.map(p=>p.clube))].length} cliente(s) com parcelas</div>
+        <span class="kpi-chip chip-gray">${implParcelas.length} parcelas no total</span>
+      </div>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Cobrado (setup)</div>
         <div class="kpi-value">${fmtK(totalCobrado)}</div>
-        <div class="kpi-sub">Setup + implantação</div>
+        <div class="kpi-sub">${implResumo.length} clientes</div>
       </div>
       <div class="kpi-card ${totalGasto>0?'amber':'green'}">
-        <div class="kpi-label">Total Gasto</div>
+        <div class="kpi-label">Total Gasto (setup)</div>
         <div class="kpi-value">${totalGasto>0?fmtK(totalGasto):'—'}</div>
         <div class="kpi-sub">Custo de instalação</div>
       </div>
       <div class="kpi-card ${totalROI>=0?'green':'red'}">
-        <div class="kpi-label">ROI Total</div>
+        <div class="kpi-label">ROI · Margem</div>
         <div class="kpi-value" style="color:${totalROI>=0?'#15803d':'#b91c1c'}">${fmtK(totalROI)}</div>
         <div class="kpi-sub">Cobrado − Gasto</div>
-      </div>
-      <div class="kpi-card ${margem>=50?'green':margem>=0?'amber':'red'}">
-        <div class="kpi-label">Margem Média</div>
-        <div class="kpi-value" style="color:${margem>=50?'#15803d':margem>=0?'#c2410c':'#b91c1c'}">${margem}%</div>
-        <div class="kpi-sub">Sobre implantações registradas</div>
+        <span class="kpi-chip ${margem>=50?'chip-up':margem>=0?'chip-warn':'chip-down'}">${margem}% margem</span>
       </div>
     </div>
 
