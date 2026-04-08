@@ -586,7 +586,7 @@ async function loadData() {
     estoque=buildEstoqueFromCSV(csvE);
     implParcelas=buildImplParcelasFromRaw(t4);
     implResumo=buildImplResumoFromCSV(csvIR);
-    clienteProduto=buildClienteProdutoFromCSV(parseCSV(t6));
+    clienteProduto=buildClienteProdutoFromCSV(t6);
     console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length,'| ImplParcelas:',implParcelas.length,'| ImplResumo:',implResumo.length);
     document.getElementById('header-date').textContent=
       'Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+
@@ -1395,33 +1395,41 @@ function buildImplantacao(){
 // ═══════════════════════════════════════════
 // CLIENTE vs PRODUTO PARSER
 // ═══════════════════════════════════════════
-function buildClienteProdutoFromCSV(rows) {
-  let headerIdx = rows.findIndex(r => Object.values(r).some(v => (v||'').toString().toLowerCase().includes('clube')));
-  if(headerIdx < 0) headerIdx = 0;
+function buildClienteProdutoFromCSV(text) {
+  // Parse raw CSV by position (sheet has duplicate "Valor" column names)
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  // Find data start: skip rows until we find "Clube" in first cell, then skip that row too
+  let dataStart = 0;
+  for(let i=0;i<lines.length;i++){
+    const first = (parseCSVLine(lines[i])[0]||'').trim().toLowerCase();
+    if(first==='clube'){ dataStart=i+1; break; }
+    // Also skip empty first rows
+    if(first===''&&i===0){ dataStart=1; }
+  }
+  const isBool = v => (v||'').toString().toUpperCase()==='TRUE';
   const data = [];
-  rows.forEach((row, i) => {
-    if(i <= headerIdx) return;
-    const vals = Object.values(row);
-    const clube = (vals[0]||'').trim();
-    if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media') || clube.toLowerCase().includes('total')) return;
-    const isBool = v => (v||'').toString().toUpperCase()==='TRUE'||(v||'').toString()==='✓'||(v||'').toString()==='1';
-    const cameras = parseInt(vals[11]||'0')||0;
-    // vals[2,4,6,8,10] = valor POR CÂMERA; total = valor × cameras
-    const pcReplay  = parseMoney(vals[2]||'');
-    const pcTrans   = parseMoney(vals[4]||'');
-    const pcPlacar  = parseMoney(vals[6]||'');
-    const pcComanda = parseMoney(vals[8]||'');
-    const pcProf    = parseMoney(vals[10]||'');
+  for(let i=dataStart;i<lines.length;i++){
+    const cols = parseCSVLine(lines[i]);
+    const clube = (cols[0]||'').trim();
+    if(!clube || clube.toLowerCase().includes('média') || clube.toLowerCase().includes('media') || clube.toLowerCase().includes('total')) continue;
+    // Columns (from image): A=Clube B=Replay C=Valor D=Transmissão E=Valor F=Placar G=Valor H=Comanda I=Valor J=Professores K=Valor L=Nº câmeras
+    // 0=Clube 1=Replay 2=pcReplay 3=Transmissão 4=pcTrans 5=Placar 6=pcPlacar 7=Comanda 8=pcComanda 9=Professores 10=pcProf 11=cameras
+    const cameras = parseInt(cols[11]||'0')||0;
+    const pcReplay  = parseMoney(cols[2]||'');
+    const pcTrans   = parseMoney(cols[4]||'');
+    const pcPlacar  = parseMoney(cols[6]||'');
+    const pcComanda = parseMoney(cols[8]||'');
+    const pcProf    = parseMoney(cols[10]||'');
     data.push({
-      clube,
-      cameras,
-      replay:       isBool(vals[1]),  pcReplay,   valorReplay:      pcReplay  * cameras,
-      transmissao:  isBool(vals[3]),  pcTrans,    valorTransmissao: pcTrans   * cameras,
-      placar:       isBool(vals[5]),  pcPlacar,   valorPlacar:      pcPlacar  * cameras,
-      comanda:      isBool(vals[7]),  pcComanda,  valorComanda:     pcComanda * cameras,
-      professores:  isBool(vals[9]),  pcProf,     valorProfessores: pcProf    * cameras,
+      clube, cameras,
+      replay:      isBool(cols[1]), pcReplay,  valorReplay:      pcReplay  * cameras,
+      transmissao: isBool(cols[3]), pcTrans,   valorTransmissao: pcTrans   * cameras,
+      placar:      isBool(cols[5]), pcPlacar,  valorPlacar:      pcPlacar  * cameras,
+      comanda:     isBool(cols[7]), pcComanda, valorComanda:     pcComanda * cameras,
+      professores: isBool(cols[9]), pcProf,    valorProfessores: pcProf    * cameras,
     });
-  });
+  }
   return data;
 }
 
