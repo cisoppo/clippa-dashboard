@@ -258,10 +258,11 @@
     .pipeline-badge.done    { background: #dcfce7; color: #15803d; }
     .pipeline-badge.ongoing { background: #fff7ed; color: #c2410c; }
     .pipeline-steps { display: flex; align-items: flex-start; gap: 0; width: 100%; }
-    .pipeline-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+    .pipeline-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; }
     .pipeline-step:not(:last-child)::after { content: ''; position: absolute; top: 13px; left: 50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
     .pipeline-step:not(:last-child).step-done::after { background: #22c55e; }
-    .pipeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; z-index: 1; flex-shrink: 0; border: 2px solid #e2e8f0; background: #f8fafc; }
+    .pipeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; z-index: 1; flex-shrink: 0; border: 2px solid #e2e8f0; background: #f8fafc; transition: transform .15s; }
+    .pipeline-step:hover .pipeline-dot { transform: scale(1.15); }
     .pipeline-dot.done    { background: #22c55e; border-color: #22c55e; color: #fff; }
     .pipeline-dot.current { background: #f97316; border-color: #f97316; color: #fff; animation: pulse-dot .9s infinite alternate; }
     .pipeline-dot.pending { background: #f8fafc; border-color: #cbd5e1; color: #94a3b8; }
@@ -269,6 +270,11 @@
     .pipeline-label { font-size: 10px; color: #64748b; text-align: center; margin-top: 6px; line-height: 1.3; font-weight: 500; max-width: 72px; }
     .pipeline-label.done    { color: #15803d; font-weight: 700; }
     .pipeline-label.current { color: #c2410c; font-weight: 700; }
+    .pipeline-checklist { display: none; margin-top: 14px; padding: 12px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #f97316; }
+    .pipeline-checklist.open { display: block; }
+    .pipeline-checklist-title { font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+    .pipeline-checklist-item { font-size: 12.5px; color: #374151; padding: 3px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+    .pipeline-checklist-item::before { content: '☐'; color: #94a3b8; flex-shrink: 0; font-size: 14px; }
     @media (max-width: 600px) {
       .pipeline-steps { flex-direction: column; gap: 10px; }
       .pipeline-step::after { display: none; }
@@ -1685,25 +1691,64 @@ function buildClienteProduto() {
 // PIPELINE ONBOARDING
 // ═══════════════════════════════════════════
 const PIPELINE_ETAPAS = [
-  { key: 'Contanto Inicial',           alt: 'Contato Inicial',           label: 'Contato\nInicial' },
-  { key: 'Infra Analisada',            alt: 'Infraestrutura Analisada',  label: 'Infra\nAnalisada' },
-  { key: 'Contrato Assinado',          alt: '',                          label: 'Contrato\nAssinado' },
-  { key: 'Compra Produtos',            alt: '',                          label: 'Compra\nProdutos' },
-  { key: 'Produtos chegaram',          alt: 'Chegada Produtos',          label: 'Produtos\nChegaram' },
-  { key: 'Finalização Configuração',   alt: 'Finalizacao Configuracao',  label: 'Config.\nFinalizada' },
-  { key: 'Instalação Cliente',         alt: 'Instalacao Cliente',        label: 'Instalação\nCliente' },
+  {
+    key: 'Contrato Enviado', label: 'Contrato\nEnviado',
+    subs: ['Envio dos banners', 'Automação de mensagem', 'Pedido de IP fixo', 'Cliente já tem concorrente: pedido das credenciais da câmera']
+  },
+  {
+    key: 'Contrato Assinado', label: 'Contrato\nAssinado',
+    subs: ['Passar para time de tecnologia infraestrutura: número quadras + qual sistema será', 'Time de tecnologia fazer lista de equipamentos', 'Time de tecnologia enviar no grupo de Compras a lista', 'Alcindo comprar equipamentos']
+  },
+  {
+    key: 'Compra Produtos', label: 'Compra\nProdutos',
+    subs: ['Enviar mensagem grupo com cliente', 'Monitorar entrega']
+  },
+  {
+    key: 'Produtos chegaram', label: 'Produtos\nChegaram',
+    subs: ['Enviar mensagem no grupo com cliente', 'Configuração e setup dos equipamentos', 'Expectativa de data alinhada com cliente']
+  },
+  {
+    key: 'Finalização Configuração', label: 'Config.\nFinalizada',
+    subs: ['Enviar mensagem no grupo com cliente', 'Programação da viagem OU programação do envio dos equipamentos']
+  },
+  {
+    key: 'Envio dos equipamentos', label: 'Envio\nEquip.',
+    subs: ['Montiragem do envio', 'Alinha com cliente', 'Se programa para instalação (suporte para o eletricista)', 'Enviar manual do eletricista']
+  },
+  {
+    key: 'Equipamentos chegaram', label: 'Equip.\nChegaram',
+    subs: ['Suporte para instalação']
+  },
+  {
+    key: 'Instalação', label: 'Instalação',
+    subs: ['Conclusão da instalação', 'Start na utilização']
+  },
 ];
 
 function getColVal(row, etapa) {
-  const v = (row[etapa.key] || row[etapa.alt] || '').trim();
-  return v !== '' && v.toUpperCase() !== 'FALSE' && v.toUpperCase() !== 'FALSO';
+  const v = (row[etapa.key] || '').trim().toUpperCase();
+  return v === 'TRUE' || v === 'VERDADEIRO';
 }
 
 function buildPipelineFromCSV(rows) {
-  return rows.filter(r => r['Cliente'] && r['Cliente'].trim()).map(r => ({
+  return rows.filter(r => r['Cliente'] && r['Cliente'].trim() && r['Contrato Enviado']).map(r => ({
     cliente: r['Cliente'].trim(),
     etapas: PIPELINE_ETAPAS.map(e => ({ label: e.label, done: getColVal(r, e) }))
   }));
+}
+
+function togglePipelineSubs(cardId, stepIdx) {
+  const subsDiv = document.getElementById(cardId + '-subs');
+  if (subsDiv.dataset.step === String(stepIdx)) {
+    subsDiv.classList.remove('open');
+    subsDiv.dataset.step = '';
+    return;
+  }
+  const etapa = PIPELINE_ETAPAS[stepIdx];
+  subsDiv.dataset.step = String(stepIdx);
+  subsDiv.innerHTML = `<div class="pipeline-checklist-title">${etapa.label.replace('\n',' ')} — checklist</div>` +
+    etapa.subs.map(s => `<div class="pipeline-checklist-item">${s}</div>`).join('');
+  subsDiv.classList.add('open');
 }
 
 function buildPipeline() {
@@ -1716,22 +1761,23 @@ function buildPipeline() {
     return;
   }
 
-  let html = `<div class="section-title">🚀 Pipeline de Onboarding</div><div class="pipeline-grid">`;
+  let html = `<div class="section-title">🚀 Pipeline de Onboarding</div>
+  <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;margin-top:-8px">Clique em qualquer etapa para ver o checklist</div>
+  <div class="pipeline-grid">`;
 
-  pipeline.forEach(c => {
+  pipeline.forEach((c, cidx) => {
+    const cardId = 'pcard-' + cidx;
     const totalEtapas = c.etapas.length;
     const doneCnt = c.etapas.filter(e => e.done).length;
     const allDone = doneCnt === totalEtapas;
     const pct = Math.round((doneCnt / totalEtapas) * 100);
-
-    // find current step (first not done)
     const currentIdx = c.etapas.findIndex(e => !e.done);
 
     const badge = allDone
       ? `<span class="pipeline-badge done">✓ Concluído</span>`
       : `<span class="pipeline-badge ongoing">${doneCnt}/${totalEtapas} etapas</span>`;
 
-    html += `<div class="pipeline-card">
+    html += `<div class="pipeline-card" id="${cardId}">
       <div class="pipeline-card-header">
         <div class="pipeline-card-name">${c.cliente}</div>
         <div style="display:flex;align-items:center;gap:12px">
@@ -1746,13 +1792,15 @@ function buildPipeline() {
       const cls = etapa.done ? 'done' : isCurrent ? 'current' : 'pending';
       const icon = etapa.done ? '✓' : isCurrent ? '●' : `${i+1}`;
       const connCls = etapa.done && i < totalEtapas - 1 ? 'step-done' : '';
-      html += `<div class="pipeline-step ${connCls}">
+      html += `<div class="pipeline-step ${connCls}" onclick="togglePipelineSubs('${cardId}',${i})">
         <div class="pipeline-dot ${cls}">${icon}</div>
         <div class="pipeline-label ${cls}">${etapa.label.replace('\n','<br>')}</div>
       </div>`;
     });
 
-    html += `</div></div>`;
+    html += `</div>
+      <div class="pipeline-checklist" id="${cardId}-subs"></div>
+    </div>`;
   });
 
   html += `</div>`;
