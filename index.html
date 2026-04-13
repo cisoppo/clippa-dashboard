@@ -1695,8 +1695,8 @@ const PIPELINE_ETAPAS = [
 ];
 
 function getColVal(row, etapa) {
-  const v = row[etapa.key] || row[etapa.alt] || '';
-  return v.toUpperCase() === 'TRUE';
+  const v = (row[etapa.key] || row[etapa.alt] || '').toUpperCase().trim();
+  return v === 'TRUE' || v === 'VERDADEIRO';
 }
 
 function buildPipelineFromCSV(rows) {
