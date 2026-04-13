@@ -1767,7 +1767,7 @@ const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao',
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
-  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto'];
+  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline'];
   document.getElementById('kpi-grid').style.display=hideKPI.includes(id)?'none':'';
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
