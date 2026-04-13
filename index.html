@@ -647,8 +647,6 @@ function buildAlerts(){
   if(precisamRenovar.length) html+=`<div class="alert-bar warning">⚠️ ${precisamRenovar.length} contrato(s) com data vencida mas ainda ativo(s): <strong>${precisamRenovar.map(c=>c.clube).join(', ')}</strong> — renovar documento</div>`;
   const pendentes=contratos.filter(c=>(PAG[c.clube]||{})[curKey]==='pendente');
   if(pendentes.length) html+=`<div class="alert-bar danger">🔴 Pagamento de ${MESES_LABEL[TODAY.getMonth()]} pendente: <strong>${pendentes.map(c=>c.clube).join(', ')}</strong></div>`;
-  const estoqueAlerta=estoque.filter(e=>e.qtde<=2);
-  if(estoqueAlerta.length) html+=`<div class="alert-bar info">📦 ${estoqueAlerta.length} item(ns) em estoque crítico/baixo: <strong>${estoqueAlerta.map(e=>e.item).join(', ')}</strong></div>`;
   document.getElementById('alerts-section').innerHTML=html;
 }
 
