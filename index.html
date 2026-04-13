@@ -1685,18 +1685,18 @@ function buildClienteProduto() {
 // PIPELINE ONBOARDING
 // ═══════════════════════════════════════════
 const PIPELINE_ETAPAS = [
-  { key: 'Contato Inicial',            alt: 'Contanto Inicial',          label: 'Contato\nInicial' },
+  { key: 'Contanto Inicial',           alt: 'Contato Inicial',           label: 'Contato\nInicial' },
   { key: 'Infra Analisada',            alt: 'Infraestrutura Analisada',  label: 'Infra\nAnalisada' },
   { key: 'Contrato Assinado',          alt: '',                          label: 'Contrato\nAssinado' },
   { key: 'Compra Produtos',            alt: '',                          label: 'Compra\nProdutos' },
-  { key: 'Chegada Produtos',           alt: '',                          label: 'Produtos\nChegaram' },
+  { key: 'Produtos chegaram',          alt: 'Chegada Produtos',          label: 'Produtos\nChegaram' },
   { key: 'Finalização Configuração',   alt: 'Finalizacao Configuracao',  label: 'Config.\nFinalizada' },
   { key: 'Instalação Cliente',         alt: 'Instalacao Cliente',        label: 'Instalação\nCliente' },
 ];
 
 function getColVal(row, etapa) {
-  const v = (row[etapa.key] || row[etapa.alt] || '').toUpperCase().trim();
-  return v === 'TRUE' || v === 'VERDADEIRO';
+  const v = (row[etapa.key] || row[etapa.alt] || '').trim();
+  return v !== '' && v.toUpperCase() !== 'FALSE' && v.toUpperCase() !== 'FALSO';
 }
 
 function buildPipelineFromCSV(rows) {
