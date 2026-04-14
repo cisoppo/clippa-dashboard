@@ -284,6 +284,9 @@
     }
 
 
+    /* ── ORÇAMENTO IFRAME ── */
+    .iframe-tab { width: 100%; height: calc(100vh - 60px); border: none; border-radius: 12px; display: block; }
+
     /* ── CS INTERAÇÕES ── */
     .cs-summary { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
     .cs-badge { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 20px; flex: 1; min-width: 90px; text-align: center; }
@@ -374,6 +377,9 @@
   <button class="nav-item" onclick="switchTab('cs')">
     <span class="nav-icon">💬</span><span class="nav-label"> CS Interações</span>
   </button>
+  <button class="nav-item" onclick="switchTab('orcamento')">
+    <span class="nav-icon">🧮</span><span class="nav-label"> Orçamento</span>
+  </button>
 
   <div class="sidebar-footer">
     <span id="header-date"></span>
@@ -403,6 +409,7 @@
       <div id="cliente-produto" class="tab-pane"></div>
       <div id="pipeline"        class="tab-pane"></div>
       <div id="cs"              class="tab-pane"></div>
+      <div id="orcamento"       class="tab-pane"></div>
     </main>
   </div>
 
@@ -1859,6 +1866,14 @@ function buildPipeline() {
 
 // ═══════════════════════════════════════════
 // ═══════════════════════════════════════════
+// ORÇAMENTO
+// ═══════════════════════════════════════════
+function buildOrcamento() {
+  document.getElementById('orcamento').innerHTML =
+    '<iframe class="iframe-tab" src="https://cisoppo.github.io/clippa-orcamento/v2.html" title="Orçamento Clippa"></iframe>';
+}
+
+// ═══════════════════════════════════════════
 // CS INTERAÇÕES
 // ═══════════════════════════════════════════
 function buildCS() {
@@ -1945,11 +1960,11 @@ function csMarkToday(name, safeId) {
 // TAB SWITCHER
 // ═══════════════════════════════════════════
 let builtTabs={};
-const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs'];
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento'];
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
-  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs'];
+  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento'];
   document.getElementById('kpi-grid').style.display=hideKPI.includes(id)?'none':'';
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1966,6 +1981,7 @@ function switchTab(id){
     if(id==='cliente-produto') buildClienteProduto();
     if(id==='pipeline')        buildPipeline();
     if(id==='cs')             buildCS();
+    if(id==='orcamento')      buildOrcamento();
   }
 }
 
