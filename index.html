@@ -283,6 +283,34 @@
       .pipeline-label { text-align: left; max-width: none; margin-top: 0; }
     }
 
+
+    /* ── CS INTERAÇÕES ── */
+    .cs-summary { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    .cs-badge { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 20px; flex: 1; min-width: 90px; text-align: center; }
+    .cs-badge .num { font-size: 26px; font-weight: 800; line-height: 1; }
+    .cs-badge .lbl { font-size: 11px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+    .cs-badge.urgent .num { color: #ef4444; }
+    .cs-badge.warning .num { color: #f97316; }
+    .cs-badge.ok .num { color: #22c55e; }
+    .cs-list { display: flex; flex-direction: column; gap: 8px; }
+    .cs-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .cs-card.urgent  { border-left-color: #ef4444; }
+    .cs-card.warning { border-left-color: #f97316; }
+    .cs-card.ok      { border-left-color: #22c55e; }
+    .cs-card.never   { border-left-color: #cbd5e1; }
+    .cs-card-info { flex: 1; min-width: 0; }
+    .cs-card-name { font-size: 15px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cs-card-meta { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+    .cs-days { font-size: 22px; font-weight: 800; min-width: 48px; text-align: right; flex-shrink: 0; }
+    .cs-card.urgent  .cs-days { color: #ef4444; }
+    .cs-card.warning .cs-days { color: #f97316; }
+    .cs-card.ok      .cs-days { color: #22c55e; }
+    .cs-card.never   .cs-days { color: #94a3b8; font-size: 13px; }
+    .cs-btn { background: #f97316; color: #fff; border: none; border-radius: 9px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .15s; }
+    .cs-btn:hover { background: #ea6a0a; }
+    .cs-btn.saving { background: #94a3b8; cursor: not-allowed; }
+    .cs-btn.done   { background: #22c55e; cursor: default; }
+
     /* ── SECTION DIVIDER ── */
     .section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .8px; margin: 20px 0 12px; display: flex; align-items: center; gap: 8px; }
     .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
@@ -343,6 +371,9 @@
   <button class="nav-item" onclick="switchTab('pipeline')">
     <span class="nav-icon">🚀</span><span class="nav-label"> Pipeline Onboarding</span>
   </button>
+  <button class="nav-item" onclick="switchTab('cs')">
+    <span class="nav-icon">💬</span><span class="nav-label"> CS Interações</span>
+  </button>
 
   <div class="sidebar-footer">
     <span id="header-date"></span>
@@ -371,6 +402,7 @@
       <div id="implantacao"  class="tab-pane"></div>
       <div id="cliente-produto" class="tab-pane"></div>
       <div id="pipeline"        class="tab-pane"></div>
+      <div id="cs"              class="tab-pane"></div>
     </main>
   </div>
 
@@ -381,6 +413,7 @@
 // CONFIGURAÇÃO
 // ═══════════════════════════════════════════
 const SHEET_ID         = '1HugA1FjzNBMlKNpr-j9pyqk_94rLSfkRIvQKQ1lTkrA';
+const CS_API_URL       = 'https://script.google.com/macros/s/AKfycbx9ZHmVPlHVuMx3Egx6noJOcyUj1plNvkGRGpB4hm8UY25AaGtq_UfzusQq-z5IkP79Iw/exec';
 const GID_CONTRATOS    = '1516194585';
 const GID_RECEBIMENTOS = '1616219438';
 const GID_ESTOQUE      = '23632109';
@@ -1825,14 +1858,98 @@ function buildPipeline() {
 }
 
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CS INTERAÇÕES
+// ═══════════════════════════════════════════
+function buildCS() {
+  const el = document.getElementById('cs');
+  el.innerHTML = '<div style="color:#94a3b8;padding:30px;text-align:center">Carregando...</div>';
+
+  fetch(CS_API_URL + '?action=getClients')
+    .then(r => r.json())
+    .then(clients => {
+      if (!clients.length) {
+        el.innerHTML = '<div style="color:#94a3b8;padding:30px;text-align:center">Nenhum cliente encontrado.</div>';
+        return;
+      }
+
+      const urgent  = clients.filter(c => c.status === 'urgent' || c.status === 'never');
+      const warning = clients.filter(c => c.status === 'warning');
+      const ok      = clients.filter(c => c.status === 'ok');
+
+      let html = '<div class="section-title">💬 CS Interações</div>';
+
+      html += '<div class="cs-summary">';
+      html += '<div class="cs-badge urgent"><div class="num">' + urgent.length + '</div><div class="lbl">Urgente</div></div>';
+      html += '<div class="cs-badge warning"><div class="num">' + warning.length + '</div><div class="lbl">Atenção</div></div>';
+      html += '<div class="cs-badge ok"><div class="num">' + ok.length + '</div><div class="lbl">Em dia</div></div>';
+      html += '</div>';
+
+      html += '<div class="cs-list">';
+
+      if (urgent.length) {
+        html += '<div class="section-title" style="margin-top:8px">🔴 Urgente — 15+ dias</div>';
+        urgent.forEach(c => html += csCardHtml(c));
+      }
+      if (warning.length) {
+        html += '<div class="section-title" style="margin-top:8px">🟡 Atenção — 10 a 14 dias</div>';
+        warning.forEach(c => html += csCardHtml(c));
+      }
+      if (ok.length) {
+        html += '<div class="section-title" style="margin-top:8px">🟢 Em dia</div>';
+        ok.forEach(c => html += csCardHtml(c));
+      }
+
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(() => {
+      el.innerHTML = '<div style="color:#ef4444;padding:30px;text-align:center">Erro ao carregar. Verifique a conexão.</div>';
+    });
+}
+
+function csCardHtml(c) {
+  const safeId = c.name.replace(/[^a-zA-Z0-9]/g, '_');
+  const daysText = c.days === null ? '—' : c.days + 'd';
+  const meta = c.lastInteraction ? 'Último: ' + c.lastInteraction : 'Sem registro';
+  return '<div class="cs-card ' + c.status + '" id="cscard-' + safeId + '">' +
+    '<div class="cs-card-info">' +
+      '<div class="cs-card-name">' + c.name + '</div>' +
+      '<div class="cs-card-meta">' + meta + '</div>' +
+    '</div>' +
+    '<div class="cs-days">' + daysText + '</div>' +
+    '<button class="cs-btn" id="csbtn-' + safeId + '" onclick="csMarkToday('' + c.name.replace(/'/g,"\'") + '','' + safeId + '')">Falei hoje</button>' +
+  '</div>';
+}
+
+function csMarkToday(name, safeId) {
+  const btn = document.getElementById('csbtn-' + safeId);
+  btn.disabled = true;
+  btn.className = 'cs-btn saving';
+  btn.textContent = '...';
+  fetch(CS_API_URL + '?action=markInteraction&client=' + encodeURIComponent(name))
+    .then(r => r.json())
+    .then(() => {
+      btn.className = 'cs-btn done';
+      btn.textContent = '✓ Salvo';
+      setTimeout(() => { builtTabs['cs'] = false; buildCS(); }, 1200);
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.className = 'cs-btn';
+      btn.textContent = 'Falei hoje';
+      alert('Erro ao salvar. Tente novamente.');
+    });
+}
+
 // TAB SWITCHER
 // ═══════════════════════════════════════════
 let builtTabs={};
-const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline'];
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs'];
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
-  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline'];
+  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs'];
   document.getElementById('kpi-grid').style.display=hideKPI.includes(id)?'none':'';
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1848,6 +1965,7 @@ function switchTab(id){
     if(id==='implantacao')  buildImplantacao();
     if(id==='cliente-produto') buildClienteProduto();
     if(id==='pipeline')        buildPipeline();
+    if(id==='cs')             buildCS();
   }
 }
 
