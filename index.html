@@ -1927,16 +1927,16 @@ function csCardHtml(c) {
   const safeId = c.name.replace(/[^a-zA-Z0-9]/g, '_');
   const daysText = c.days === null ? '—' : c.days + 'd';
   const meta = c.lastInteraction ? 'Último: ' + c.lastInteraction : 'Sem registro';
+  const safeName = c.name.replace(/'/g, "\\'");
   return '<div class="cs-card ' + c.status + '" id="cscard-' + safeId + '">' +
     '<div class="cs-card-info">' +
       '<div class="cs-card-name">' + c.name + '</div>' +
       '<div class="cs-card-meta">' + meta + '</div>' +
     '</div>' +
     '<div class="cs-days">' + daysText + '</div>' +
-    '<button class="cs-btn" id="csbtn-' + safeId + '" onclick="csMarkToday('' + c.name.replace(/'/g,"\'") + '','' + safeId + '')">Falei hoje</button>' +
+    '<button class="cs-btn" id="csbtn-' + safeId + '" onclick="csMarkToday(\'' + safeName + '\',\'' + safeId + '\')">Falei hoje</button>' +
   '</div>';
 }
-
 function csMarkToday(name, safeId) {
   const btn = document.getElementById('csbtn-' + safeId);
   btn.disabled = true;
