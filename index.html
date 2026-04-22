@@ -454,12 +454,20 @@ function parseCSVLine(line) {
   result.push(cur.trim()); return result;
 }
 
-function parseCSV(text) {
+function parseCSV(text, knownHeaders) {
   text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = text.trim().split('\n').filter(l => l.trim());
   let headerIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (parseCSVLine(lines[i]).some(v => v.trim())) { headerIdx = i; break; }
+  if (knownHeaders && knownHeaders.length) {
+    const normKnown = knownHeaders.map(h => h.trim().toLowerCase());
+    for (let i = 0; i < lines.length; i++) {
+      const vals = parseCSVLine(lines[i]).map(v => v.trim().toLowerCase());
+      if (vals.some(v => normKnown.includes(v))) { headerIdx = i; break; }
+    }
+  } else {
+    for (let i = 0; i < lines.length; i++) {
+      if (parseCSVLine(lines[i]).some(v => v.trim())) { headerIdx = i; break; }
+    }
   }
   const headers = parseCSVLine(lines[headerIdx]).map((h, i) => {
     h = h.trim().replace(/^\uFEFF/, '');
@@ -669,8 +677,8 @@ async function loadData() {
     implResumo=buildImplResumoFromCSV(csvIR);
     clienteProduto=buildClienteProdutoFromCSV(t6);
     pipeline=buildPipelineFromCSV(parseCSV(t7));
-    pipelineChecklist=parseCSV(t8).filter(r=>r['Cliente']&&normStr(r['Cliente'])!=='clientexxx');
-    pipelineMensagens=parseCSV(t9).filter(r=>r['Etapa']);
+    pipelineChecklist=parseCSV(t8,['Cliente','Etapa','Tarefa','Feito?']).filter(r=>r['Cliente']&&normStr(r['Cliente'])!=='clientexxx');
+    pipelineMensagens=parseCSV(t9,['Etapa','Ocasião','Mensagem']).filter(r=>r['Etapa']);
     console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length,'| ImplParcelas:',implParcelas.length,'| ImplResumo:',implResumo.length);
     document.getElementById('header-date').textContent=
       'Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+
@@ -1930,7 +1938,7 @@ function renderChecklistPane() {
   el.innerHTML = `<div style="text-align:center;padding:30px;color:#94a3b8">Carregando...</div>`;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
   fetch(base + GID_CHECKLIST).then(r => r.text()).then(t => {
-    const raw = parseCSV(t);
+    const raw = parseCSV(t, ['Cliente','Etapa','Tarefa','Feito?']);
     const headers = raw[0] ? Object.keys(raw[0]).join(' | ') : '(vazio)';
     const firstRow = raw[0] ? JSON.stringify(raw[0]).substring(0, 200) : '—';
     pipelineChecklist = raw.filter(r => {
@@ -1992,7 +2000,7 @@ function renderMensagensPane() {
   el.innerHTML = `<div style="text-align:center;padding:30px;color:#94a3b8">Carregando...</div>`;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
   fetch(base + GID_MENSAGENS).then(r => r.text()).then(t => {
-    pipelineMensagens = parseCSV(t).filter(r => r['Etapa']);
+    pipelineMensagens = parseCSV(t, ['Etapa','Ocasião','Mensagem']).filter(r => r['Etapa']);
     _drawMensagens(el, pipelineMensagens);
   }).catch(e => { el.innerHTML = `<div style="color:#ef4444;padding:30px;text-align:center">Erro: ${e.message}</div>`; });
 }
