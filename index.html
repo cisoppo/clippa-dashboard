@@ -1844,10 +1844,18 @@ function copyMsg(btn) {
 function buildPipeline() {
   const el = document.getElementById('pipeline');
   if (!pipeline.length) {
-    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#64748b;font-size:14px">
-      Nenhum cliente em onboarding no momento.<br>
-      <span style="font-size:12px">Adicione clientes na aba <strong>Pipeline</strong> da planilha.</span>
-    </div>`;
+    const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
+    fetch(base+GID_PIPELINE).then(r=>r.text()).then(t=>{
+      const rows=parseCSV(t);
+      const keys=rows[0]?Object.keys(rows[0]).join(' | '):'(vazio)';
+      el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">
+        Nenhum cliente carregado.<br>
+        <span style="font-size:11px;display:block;margin-top:8px;color:#94a3b8">Linhas CSV: ${rows.length} | Colunas: ${keys}</span>
+        <span style="font-size:11px;display:block;margin-top:4px;color:#94a3b8">Primeira linha: ${rows[0]?JSON.stringify(rows[0]).substring(0,120):'—'}</span>
+      </div>`;
+    }).catch(e=>{
+      el.innerHTML=`<div style="color:#ef4444;padding:30px;text-align:center">Erro ao carregar pipeline: ${e.message}</div>`;
+    });
     return;
   }
 
