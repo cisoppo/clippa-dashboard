@@ -1930,7 +1930,27 @@ function renderChecklistPane() {
   el.innerHTML = `<div style="text-align:center;padding:30px;color:#94a3b8">Carregando...</div>`;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
   fetch(base + GID_CHECKLIST).then(r => r.text()).then(t => {
-    pipelineChecklist = parseCSV(t).filter(r => r['Cliente'] && normStr(r['Cliente']) !== 'clientexxx');
+    const raw = parseCSV(t);
+    const headers = raw[0] ? Object.keys(raw[0]).join(' | ') : '(vazio)';
+    const firstRow = raw[0] ? JSON.stringify(raw[0]).substring(0, 200) : '—';
+    pipelineChecklist = raw.filter(r => {
+      const clienteKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'cliente');
+      return clienteKey && r[clienteKey] && normStr(r[clienteKey]) !== 'clientexxx';
+    }).map(r => {
+      const clienteKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'cliente');
+      const etapaKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'etapa');
+      const tarefaKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'tarefa');
+      const feitoKey = Object.keys(r).find(k => k.trim().toLowerCase().startsWith('feito'));
+      return { Cliente: r[clienteKey]||'', Etapa: r[etapaKey]||'', Tarefa: r[tarefaKey]||'', 'Feito?': r[feitoKey]||'' };
+    });
+    if (!pipelineChecklist.length) {
+      el.innerHTML = `<div style="padding:20px;font-size:12px;color:#64748b">
+        <b>Debug:</b> ${raw.length} linhas no CSV<br>
+        Colunas: ${headers}<br>
+        1ª linha: ${firstRow}
+      </div>`;
+      return;
+    }
     _drawChecklist(el, pipelineChecklist);
   }).catch(e => { el.innerHTML = `<div style="color:#ef4444;padding:30px;text-align:center">Erro: ${e.message}</div>`; });
 }
