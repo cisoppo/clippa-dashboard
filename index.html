@@ -455,32 +455,44 @@ function parseCSVLine(line) {
 }
 
 function parseCSV(text, knownHeaders) {
-  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = text.trim().split('\n').filter(l => l.trim());
+  text = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Parse properly handling multi-line quoted fields
+  const rows = [];
+  let cur = '', inQ = false, row = [];
+  for (let i = 0; i <= text.length; i++) {
+    const c = i < text.length ? text[i] : '\n';
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(cur); cur = '';
+    } else if (c === '\n' && !inQ) {
+      row.push(cur); cur = '';
+      if (row.some(v => v.trim())) rows.push(row.map(v => v.trim()));
+      row = [];
+    } else {
+      cur += c;
+    }
+  }
+  if (!rows.length) return [];
+  // Find header row
   let headerIdx = 0;
   if (knownHeaders && knownHeaders.length) {
     const normKnown = knownHeaders.map(h => h.trim().toLowerCase());
-    for (let i = 0; i < lines.length; i++) {
-      const vals = parseCSVLine(lines[i]).map(v => v.trim().toLowerCase());
-      if (vals.some(v => normKnown.includes(v))) { headerIdx = i; break; }
-    }
-  } else {
-    for (let i = 0; i < lines.length; i++) {
-      if (parseCSVLine(lines[i]).some(v => v.trim())) { headerIdx = i; break; }
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].some(v => normKnown.includes(v.trim().toLowerCase()))) { headerIdx = i; break; }
     }
   }
-  const headers = parseCSVLine(lines[headerIdx]).map((h, i) => {
-    h = h.trim().replace(/^\uFEFF/, '');
+  const headers = rows[headerIdx].map((h, i) => {
+    h = h.trim().replace(/^﻿/, '');
     return h || (i === 0 ? 'Status' : `_col${i}`);
   });
-  return lines.slice(headerIdx + 1).map(line => {
-    const vals = parseCSVLine(line);
+  return rows.slice(headerIdx + 1).filter(r => r.some(v => v)).map(row => {
     const obj = {};
-    headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+    headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
     return obj;
   });
 }
-
 function parseMoney(s) {
   if (!s) return 0;
   return parseFloat(s.replace(/R\$\s*/g, '').replace(/,/g, '').trim()) || 0;
