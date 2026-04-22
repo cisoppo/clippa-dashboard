@@ -1843,24 +1843,44 @@ function copyMsg(btn) {
 
 function buildPipeline() {
   const el = document.getElementById('pipeline');
+
+  const subTabBar = `
+  <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;padding-bottom:0">
+    <button id="pl-tab-pipeline" onclick="switchPipelineTab('pipeline')" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:700;cursor:pointer;color:#f97316;border-bottom:3px solid #f97316;margin-bottom:-2px">🚀 Pipeline</button>
+    <button id="pl-tab-checklist" onclick="switchPipelineTab('checklist')" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:3px solid transparent;margin-bottom:-2px">✅ Checklist de Tarefas</button>
+    <button id="pl-tab-mensagens" onclick="switchPipelineTab('mensagens')" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;border-bottom:3px solid transparent;margin-bottom:-2px">💬 Mensagens Padrão</button>
+  </div>
+  <div id="pl-pane-pipeline"></div>
+  <div id="pl-pane-checklist" style="display:none"></div>
+  <div id="pl-pane-mensagens" style="display:none"></div>`;
+
+  el.innerHTML = subTabBar;
+  renderPipelinePane();
+  renderChecklistPane();
+  renderMensagensPane();
+}
+
+function switchPipelineTab(tab) {
+  ['pipeline','checklist','mensagens'].forEach(t => {
+    document.getElementById('pl-pane-'+t).style.display = t===tab ? '' : 'none';
+    const btn = document.getElementById('pl-tab-'+t);
+    btn.style.color = t===tab ? '#f97316' : '#64748b';
+    btn.style.borderBottom = t===tab ? '3px solid #f97316' : '3px solid transparent';
+    btn.style.fontWeight = t===tab ? '700' : '600';
+  });
+}
+
+function renderPipelinePane() {
+  const el = document.getElementById('pl-pane-pipeline');
   if (!pipeline.length) {
-    const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
-    fetch(base+GID_PIPELINE).then(r=>r.text()).then(t=>{
-      const rows=parseCSV(t);
-      const keys=rows[0]?Object.keys(rows[0]).join(' | '):'(vazio)';
-      el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">
-        Nenhum cliente carregado.<br>
-        <span style="font-size:11px;display:block;margin-top:8px;color:#94a3b8">Linhas CSV: ${rows.length} | Colunas: ${keys}</span>
-        <span style="font-size:11px;display:block;margin-top:4px;color:#94a3b8">Primeira linha: ${rows[0]?JSON.stringify(rows[0]).substring(0,120):'—'}</span>
-      </div>`;
-    }).catch(e=>{
-      el.innerHTML=`<div style="color:#ef4444;padding:30px;text-align:center">Erro ao carregar pipeline: ${e.message}</div>`;
-    });
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#64748b;font-size:14px">
+      Nenhum cliente em onboarding no momento.<br>
+      <span style="font-size:12px">Adicione clientes na aba <strong>Pipeline Onboarding</strong> da planilha.</span>
+    </div>`;
     return;
   }
 
-  let html = `<div class="section-title">🚀 Pipeline de Onboarding</div>
-  <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;margin-top:-8px">Clique em qualquer etapa para ver o checklist</div>
+  let html = `<div style="font-size:11px;color:#94a3b8;margin-bottom:16px">Clique em qualquer etapa para ver o checklist e mensagens</div>
   <div class="pipeline-grid">`;
 
   pipeline.forEach((c, cidx) => {
@@ -1902,6 +1922,70 @@ function buildPipeline() {
   });
 
   html += `</div>`;
+  el.innerHTML = html;
+}
+
+function renderChecklistPane() {
+  const el = document.getElementById('pl-pane-checklist');
+  if (!pipelineChecklist.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">Nenhuma tarefa encontrada na planilha.</div>`;
+    return;
+  }
+
+  const clientes = [...new Set(pipelineChecklist.map(r => r['Cliente']))];
+  let html = '';
+
+  clientes.forEach(cliente => {
+    const etapas = [...new Set(pipelineChecklist.filter(r => r['Cliente'] === cliente).map(r => r['Etapa']))];
+    html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px">${cliente}</div>`;
+
+    etapas.forEach(etapa => {
+      const tasks = pipelineChecklist.filter(r => r['Cliente'] === cliente && r['Etapa'] === etapa);
+      const doneCnt = tasks.filter(t => (t['Feito?']||'').toUpperCase() === 'TRUE').length;
+      const allDone = doneCnt === tasks.length;
+      html += `<div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:${allDone?'#22c55e':'#f97316'};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${etapa} ${allDone?'✓':doneCnt+'/'+tasks.length}</div>`;
+      tasks.forEach(t => {
+        const done = (t['Feito?']||'').toUpperCase() === 'TRUE';
+        html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:13px;color:${done?'#94a3b8':'#334155'}">
+          <span style="margin-top:1px;color:${done?'#22c55e':'#cbd5e1'}">${done?'✓':'○'}</span>
+          <span style="${done?'text-decoration:line-through':''}">${t['Tarefa']}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function renderMensagensPane() {
+  const el = document.getElementById('pl-pane-mensagens');
+  if (!pipelineMensagens.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">Nenhuma mensagem encontrada na planilha.</div>`;
+    return;
+  }
+
+  let html = `<div style="font-size:13px;color:#64748b;margin-bottom:16px">Templates para copiar e adaptar no WhatsApp com o cliente.</div>`;
+
+  pipelineMensagens.forEach(m => {
+    const msgText = m['Mensagem (copiar e adaptar)'] || '';
+    const msgHtml = msgText.replace(/\n/g, '<br>');
+    html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:1px">${m['Etapa']||''}</span>
+          <span style="font-size:11px;color:#94a3b8;margin-left:8px">· ${m['Ocasião']||''}</span>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;white-space:nowrap;margin-left:12px">${m['Enviado por']||''}</span>
+      </div>
+      <div style="font-size:13px;color:#334155;line-height:1.7;background:#f8fafc;border-radius:6px;padding:12px">${msgHtml}</div>
+      <button onclick="copyMsg(this)" data-msg="${encodeURIComponent(msgText)}" style="margin-top:10px;padding:6px 14px;background:#f97316;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">Copiar mensagem</button>
+    </div>`;
+  });
+
   el.innerHTML = html;
 }
 
