@@ -1880,7 +1880,7 @@ function renderPipelinePane() {
     return;
   }
 
-  let html = `<div style="font-size:11px;color:#94a3b8;margin-bottom:16px">Clique em qualquer etapa para ver o checklist e mensagens</div>
+  let html = `<div style="font-size:11px;color:#94a3b8;margin-bottom:16px">Progresso de onboarding por cliente</div>
   <div class="pipeline-grid">`;
 
   pipeline.forEach((c, cidx) => {
@@ -1910,14 +1910,13 @@ function renderPipelinePane() {
       const cls = etapa.done ? 'done' : isCurrent ? 'current' : 'pending';
       const icon = etapa.done ? '✓' : isCurrent ? '●' : `${i+1}`;
       const connCls = etapa.done && i < totalEtapas - 1 ? 'step-done' : '';
-      html += `<div class="pipeline-step ${connCls}" onclick="togglePipelineSubs('${cardId}',${i},${cidx})">
+      html += `<div class="pipeline-step ${connCls}">
         <div class="pipeline-dot ${cls}">${icon}</div>
         <div class="pipeline-label ${cls}">${etapa.label.replace('\n','<br>')}</div>
       </div>`;
     });
 
     html += `</div>
-      <div class="pipeline-checklist" id="${cardId}-subs"></div>
     </div>`;
   });
 
