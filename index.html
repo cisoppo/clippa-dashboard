@@ -427,13 +427,15 @@ const GID_ESTOQUE      = '23632109';
 const GID_IMPL_PARCELAS = '537145439';
 const GID_IMPL_RESUMO   = '900572378';
 const GID_CLIENTE_PRODUTO = '34736782';
-const GID_PIPELINE        = '1139371171';
+const GID_PIPELINE        = '252517997';
+const GID_CHECKLIST       = '2044170136';
+const GID_MENSAGENS       = '1690685908';
 
 // ═══════════════════════════════════════════
 // ESTADO GLOBAL
 // ═══════════════════════════════════════════
 const TODAY = new Date();
-let contratos = [], PAG = {}, estoque = [], implParcelas = [], implResumo = [], clienteProduto = [], pipeline = [];
+let contratos = [], PAG = {}, estoque = [], implParcelas = [], implResumo = [], clienteProduto = [], pipeline = [], pipelineChecklist = [], pipelineMensagens = [];
 
 const MESES_KEYS  = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -653,8 +655,8 @@ async function loadData() {
   document.getElementById('main-content').style.display='none';
   const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=`;
   try {
-    const [r1,r2,r3,r4,r5,r6,r7]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE),fetch(base+GID_IMPL_PARCELAS),fetch(base+GID_IMPL_RESUMO),fetch(base+GID_CLIENTE_PRODUTO),fetch(base+GID_PIPELINE)]);
-    const [t1,t2,t3,t4,t5,t6,t7]=await Promise.all([r1.text(),r2.text(),r3.text(),r4.text(),r5.text(),r6.text(),r7.text()]);
+    const [r1,r2,r3,r4,r5,r6,r7,r8,r9]=await Promise.all([fetch(base+GID_CONTRATOS),fetch(base+GID_RECEBIMENTOS),fetch(base+GID_ESTOQUE),fetch(base+GID_IMPL_PARCELAS),fetch(base+GID_IMPL_RESUMO),fetch(base+GID_CLIENTE_PRODUTO),fetch(base+GID_PIPELINE),fetch(base+GID_CHECKLIST),fetch(base+GID_MENSAGENS)]);
+    const [t1,t2,t3,t4,t5,t6,t7,t8,t9]=await Promise.all([r1.text(),r2.text(),r3.text(),r4.text(),r5.text(),r6.text(),r7.text(),r8.text(),r9.text()]);
     const csvC=parseCSV(t1), csvR=parseCSV(t2), csvE=parseCSV(t3), csvIR=parseCSV(t5);
     console.log('[Clippa] Contratos CSV:',csvC.length,'| row[0]:',JSON.stringify(csvC[0]));
     console.log('[Clippa] Receb CSV:',csvR.length,'| row[0]:',JSON.stringify(csvR[0]));
@@ -667,6 +669,8 @@ async function loadData() {
     implResumo=buildImplResumoFromCSV(csvIR);
     clienteProduto=buildClienteProdutoFromCSV(t6);
     pipeline=buildPipelineFromCSV(parseCSV(t7));
+    pipelineChecklist=parseCSV(t8).filter(r=>r['Cliente']&&normStr(r['Cliente'])!=='clientexxx');
+    pipelineMensagens=parseCSV(t9).filter(r=>r['Etapa']);
     console.log('[Clippa] Contratos parseados:',contratos.length,'| Estoque:',estoque.length,'| ImplParcelas:',implParcelas.length,'| ImplResumo:',implResumo.length);
     document.getElementById('header-date').textContent=
       'Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · '+
@@ -1732,38 +1736,15 @@ function buildClienteProduto() {
 // PIPELINE ONBOARDING
 // ═══════════════════════════════════════════
 const PIPELINE_ETAPAS = [
-  {
-    key: 'Contrato Enviado', label: 'Contrato\nEnviado',
-    subs: ['Envio dos banners', 'Automação de mensagem', 'Pedido de IP fixo', 'Cliente já tem concorrente: pedido das credenciais da câmera']
-  },
-  {
-    key: 'Contrato Assinado', label: 'Contrato\nAssinado',
-    subs: ['Passar para time de tecnologia infraestrutura: número quadras + qual sistema será', 'Time de tecnologia fazer lista de equipamentos', 'Time de tecnologia enviar no grupo de Compras a lista', 'Alcindo comprar equipamentos']
-  },
-  {
-    key: 'Compra Produtos', label: 'Compra\nProdutos',
-    subs: ['Enviar mensagem grupo com cliente', 'Monitorar entrega']
-  },
-  {
-    key: 'Produtos chegaram', label: 'Produtos\nChegaram',
-    subs: ['Enviar mensagem no grupo com cliente', 'Configuração e setup dos equipamentos', 'Expectativa de data alinhada com cliente']
-  },
-  {
-    key: 'Finalização Configuração', label: 'Config.\nFinalizada',
-    subs: ['Enviar mensagem no grupo com cliente', 'Programação da viagem OU programação do envio dos equipamentos']
-  },
-  {
-    key: 'Envio dos equipamentos', label: 'Envio\nEquip.',
-    subs: ['Montiragem do envio', 'Alinha com cliente', 'Se programa para instalação (suporte para o eletricista)', 'Enviar manual do eletricista']
-  },
-  {
-    key: 'Equipamentos chegaram', label: 'Equip.\nChegaram',
-    subs: ['Suporte para instalação']
-  },
-  {
-    key: 'Instalação', label: 'Instalação',
-    subs: ['Conclusão da instalação', 'Start na utilização']
-  },
+  { key: 'Contrato assinado',        label: 'Contrato\nAssinado' },
+  { key: 'Kickoff',                  label: 'Kickoff' },
+  { key: 'Compra dos Equipamentos',  label: 'Compra\nEquip.' },
+  { key: 'Equipamentos Chegaram',    label: 'Equip.\nChegaram' },
+  { key: 'Configuração Finalizada',  label: 'Config.\nFinalizada' },
+  { key: 'Equipamentos Enviados',    label: 'Equip.\nEnviados' },
+  { key: 'Equipamentos no Cliente',  label: 'Equip. no\nCliente' },
+  { key: 'Instalação',               label: 'Instalação' },
+  { key: 'Go-live',                  label: 'Go-live' },
 ];
 
 function getColVal(row, etapa) {
@@ -1772,9 +1753,11 @@ function getColVal(row, etapa) {
 }
 
 function buildPipelineFromCSV(rows) {
-  return rows.filter(r => r['Cliente'] && r['Cliente'].trim() && r['Contrato Enviado']).map(r => ({
-    cliente: r['Cliente'].trim(),
-    etapas: PIPELINE_ETAPAS.map(e => ({ label: e.label, done: getColVal(r, e) }))
+  return rows.filter(r => r['CLIENTE'] && r['CLIENTE'].trim()).map(r => ({
+    cliente: r['CLIENTE'].trim(),
+    pctFeito: parseInt((r['% FEITO'] || '0%').replace('%', '')) || 0,
+    etapaAtual: (r['ETAPA ATUAL'] || '').trim(),
+    etapas: PIPELINE_ETAPAS.map(e => ({ key: e.key, label: e.label, done: getColVal(r, e) }))
   }));
 }
 
@@ -1782,7 +1765,7 @@ function plStorageKey(cardId, stepIdx, subIdx) {
   return `pl_${cardId}_${stepIdx}_${subIdx}`;
 }
 
-function togglePipelineSubs(cardId, stepIdx) {
+function togglePipelineSubs(cardId, stepIdx, cidx) {
   const subsDiv = document.getElementById(cardId + '-subs');
   if (subsDiv.dataset.step === String(stepIdx)) {
     subsDiv.classList.remove('open');
@@ -1790,22 +1773,59 @@ function togglePipelineSubs(cardId, stepIdx) {
     return;
   }
   const etapa = PIPELINE_ETAPAS[stepIdx];
+  const cliente = pipeline[cidx] ? pipeline[cidx].cliente : '';
   subsDiv.dataset.step = String(stepIdx);
-  subsDiv.innerHTML = `<div class="pipeline-checklist-title">${etapa.label.replace('\n',' ')} — checklist</div>` +
-    etapa.subs.map((s, si) => {
+
+  const tasks = pipelineChecklist.filter(r =>
+    normStr(r['Cliente']) === normStr(cliente) &&
+    normStr(r['Etapa']) === normStr(etapa.key)
+  );
+
+  const msgs = pipelineMensagens.filter(r => normStr(r['Etapa']) === normStr(etapa.key));
+
+  let html = `<div class="pipeline-checklist-title">${etapa.label.replace('\n', ' ')} — checklist</div>`;
+
+  if (tasks.length) {
+    html += tasks.map((t, si) => {
       const key = plStorageKey(cardId, stepIdx, si);
-      const checked = localStorage.getItem(key) === '1';
-      return `<label class="pipeline-checklist-item${checked?' checked':''}">
-        <input type="checkbox" ${checked?'checked':''} onchange="savePipelineCheck(this,'${key}')">
-        <span>${s}</span>
+      const sheetDone = (t['Feito?'] || '').toUpperCase() === 'TRUE';
+      const checked = localStorage.getItem(key) !== null ? localStorage.getItem(key) === '1' : sheetDone;
+      return `<label class="pipeline-checklist-item${checked ? ' checked' : ''}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="savePipelineCheck(this,'${key}')">
+        <span>${t['Tarefa']}</span>
       </label>`;
     }).join('');
+  } else {
+    html += `<div style="font-size:12px;color:#94a3b8;padding:8px 0">Sem tarefas para esta etapa.</div>`;
+  }
+
+  if (msgs.length) {
+    html += `<div class="pipeline-checklist-title" style="margin-top:12px">💬 Mensagens WhatsApp</div>`;
+    msgs.forEach(m => {
+      const msgEscaped = (m['Mensagem (copiar e adaptar)'] || '').replace(/\n/g, '<br>');
+      html += `<div style="background:#1e293b;border-radius:6px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${m['Ocasião'] || ''} · ${m['Enviado por'] || ''}</div>
+        <div style="font-size:12px;color:#cbd5e1;line-height:1.6">${msgEscaped}</div>
+        <button onclick="copyMsg(this)" data-msg="${encodeURIComponent(m['Mensagem (copiar e adaptar)'] || '')}" style="margin-top:8px;padding:4px 10px;background:#f97316;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">Copiar</button>
+      </div>`;
+    });
+  }
+
+  subsDiv.innerHTML = html;
   subsDiv.classList.add('open');
 }
 
 function savePipelineCheck(el, key) {
   localStorage.setItem(key, el.checked ? '1' : '0');
   el.closest('.pipeline-checklist-item').classList.toggle('checked', el.checked);
+}
+
+function copyMsg(btn) {
+  const txt = decodeURIComponent(btn.dataset.msg);
+  navigator.clipboard.writeText(txt).then(() => {
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => { btn.textContent = 'Copiar'; }, 1800);
+  });
 }
 
 function buildPipeline() {
@@ -1849,7 +1869,7 @@ function buildPipeline() {
       const cls = etapa.done ? 'done' : isCurrent ? 'current' : 'pending';
       const icon = etapa.done ? '✓' : isCurrent ? '●' : `${i+1}`;
       const connCls = etapa.done && i < totalEtapas - 1 ? 'step-done' : '';
-      html += `<div class="pipeline-step ${connCls}" onclick="togglePipelineSubs('${cardId}',${i})">
+      html += `<div class="pipeline-step ${connCls}" onclick="togglePipelineSubs('${cardId}',${i},${cidx})">
         <div class="pipeline-dot ${cls}">${icon}</div>
         <div class="pipeline-label ${cls}">${etapa.label.replace('\n','<br>')}</div>
       </div>`;
