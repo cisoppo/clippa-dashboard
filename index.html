@@ -1752,13 +1752,26 @@ function getColVal(row, etapa) {
   return v === 'TRUE' || v === 'VERDADEIRO';
 }
 
+function getPipelineField(row, ...names) {
+  for (const n of names) {
+    const key = Object.keys(row).find(k => k.trim().toLowerCase() === n.toLowerCase());
+    if (key && row[key]) return row[key].trim();
+  }
+  return '';
+}
+
 function buildPipelineFromCSV(rows) {
-  return rows.filter(r => r['CLIENTE'] && r['CLIENTE'].trim()).map(r => ({
-    cliente: r['CLIENTE'].trim(),
-    pctFeito: parseInt((r['% FEITO'] || '0%').replace('%', '')) || 0,
-    etapaAtual: (r['ETAPA ATUAL'] || '').trim(),
+  const result = rows.filter(r => {
+    const nome = getPipelineField(r, 'CLIENTE', 'Cliente', 'cliente');
+    return nome && nome.length > 0;
+  }).map(r => ({
+    cliente: getPipelineField(r, 'CLIENTE', 'Cliente', 'cliente'),
+    pctFeito: parseInt((getPipelineField(r, '% FEITO', '% feito', 'pct feito') || '0').replace('%', '')) || 0,
+    etapaAtual: getPipelineField(r, 'ETAPA ATUAL', 'Etapa Atual', 'Etapa atual'),
     etapas: PIPELINE_ETAPAS.map(e => ({ key: e.key, label: e.label, done: getColVal(r, e) }))
   }));
+  console.log('[Clippa] Pipeline rows:', rows.length, '| Parsed:', result.length, '| Keys:', rows[0] ? Object.keys(rows[0]).join(', ') : 'none');
+  return result;
 }
 
 function plStorageKey(cardId, stepIdx, subIdx) {
