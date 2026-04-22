@@ -1900,47 +1900,49 @@ function renderPipelinePane() {
     return;
   }
 
-  let html = `<div style="font-size:11px;color:#94a3b8;margin-bottom:16px">Progresso de onboarding por cliente</div>
-  <div class="pipeline-grid">`;
+  let html = '<div style="display:flex;flex-direction:column;gap:14px">';
 
-  pipeline.forEach((c, cidx) => {
-    const cardId = 'pcard-' + cidx;
+  pipeline.forEach((c) => {
     const totalEtapas = c.etapas.length;
     const doneCnt = c.etapas.filter(e => e.done).length;
     const allDone = doneCnt === totalEtapas;
     const pct = Math.round((doneCnt / totalEtapas) * 100);
-    const currentIdx = c.etapas.findIndex(e => !e.done);
+    const etapaAtual = c.etapaAtual || (allDone ? 'Concluído' : '—');
+    const pctColor = pct === 100 ? '#22c55e' : pct >= 50 ? '#f97316' : '#94a3b8';
 
-    const badge = allDone
-      ? `<span class="pipeline-badge done">✓ Concluído</span>`
-      : `<span class="pipeline-badge ongoing">${doneCnt}/${totalEtapas} etapas</span>`;
-
-    html += `<div class="pipeline-card" id="${cardId}">
-      <div class="pipeline-card-header">
-        <div class="pipeline-card-name">${c.cliente}</div>
+    html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:15px;font-weight:700;color:#0f172a">${c.cliente}</div>
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:11px;color:#94a3b8;font-weight:600">${pct}%</div>
-          ${badge}
+          <span style="font-size:11px;color:#64748b">Etapa atual: <strong style="color:#0f172a">${etapaAtual}</strong></span>
+          <span style="font-size:13px;font-weight:700;color:${pctColor}">${pct}%</span>
         </div>
       </div>
-      <div class="pipeline-steps">`;
+      <div style="height:6px;background:#f1f5f9;border-radius:99px;margin-bottom:14px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct===100?'#22c55e':'#f97316'};border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">`;
 
-    c.etapas.forEach((etapa, i) => {
-      const isCurrent = !allDone && i === currentIdx;
-      const cls = etapa.done ? 'done' : isCurrent ? 'current' : 'pending';
-      const icon = etapa.done ? '✓' : isCurrent ? '●' : `${i+1}`;
-      const connCls = etapa.done && i < totalEtapas - 1 ? 'step-done' : '';
-      html += `<div class="pipeline-step ${connCls}">
-        <div class="pipeline-dot ${cls}">${icon}</div>
-        <div class="pipeline-label ${cls}">${etapa.label.replace('\n','<br>')}</div>
-      </div>`;
+    c.etapas.forEach((etapa) => {
+      if (etapa.done) {
+        html += `<div style="display:flex;align-items:center;gap:5px;background:#fff7ed;border:1.5px solid #f97316;border-radius:7px;padding:5px 10px">
+          <div style="width:16px;height:16px;background:#f97316;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="color:#fff;font-size:10px;font-weight:900">✓</span>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:#ea580c;white-space:nowrap">${etapa.label.replace('\n',' ')}</span>
+        </div>`;
+      } else {
+        html += `<div style="display:flex;align-items:center;gap:5px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:7px;padding:5px 10px">
+          <div style="width:16px;height:16px;background:#fff;border:2px solid #cbd5e1;border-radius:4px;flex-shrink:0"></div>
+          <span style="font-size:11px;font-weight:500;color:#94a3b8;white-space:nowrap">${etapa.label.replace('\n',' ')}</span>
+        </div>`;
+      }
     });
 
-    html += `</div>
-    </div>`;
+    html += `</div></div>`;
   });
 
-  html += `</div>`;
+  html += '</div>';
   el.innerHTML = html;
 }
 
