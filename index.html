@@ -1902,7 +1902,13 @@ function renderPipelinePane() {
 
   let html = '<div style="display:flex;flex-direction:column;gap:14px">';
 
-  pipeline.forEach((c) => {
+  const sortedPipeline = [...pipeline].sort((a, b) => {
+    const aDone = a.etapas.filter(e => e.done).length === a.etapas.length ? 1 : 0;
+    const bDone = b.etapas.filter(e => e.done).length === b.etapas.length ? 1 : 0;
+    return aDone - bDone;
+  });
+
+  sortedPipeline.forEach((c) => {
     const totalEtapas = c.etapas.length;
     const doneCnt = c.etapas.filter(e => e.done).length;
     const allDone = doneCnt === totalEtapas;
@@ -2006,7 +2012,13 @@ function _drawChecklist(el, data) {
     el.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">Nenhuma tarefa encontrada na planilha.</div>`;
     return;
   }
-  const clientes = [...new Set(data.map(r => r['Cliente']))];
+  const clientes = [...new Set(data.map(r => r['Cliente']))].sort((a, b) => {
+    const aTasks = data.filter(r => r['Cliente'] === a);
+    const bTasks = data.filter(r => r['Cliente'] === b);
+    const aDone = aTasks.filter(t => (t['Feito?']||'').toUpperCase() === 'TRUE').length === aTasks.length ? 1 : 0;
+    const bDone = bTasks.filter(t => (t['Feito?']||'').toUpperCase() === 'TRUE').length === bTasks.length ? 1 : 0;
+    return aDone - bDone;
+  });
   let html = '';
   clientes.forEach(cliente => {
     const clienteTasks = data.filter(r => r['Cliente'] === cliente);
