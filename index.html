@@ -1992,6 +1992,15 @@ function renderChecklistPane() {
   }).catch(e => { el.innerHTML = `<div style="color:#ef4444;padding:30px;text-align:center">Erro: ${e.message}</div>`; });
 }
 
+function toggleClientChecklist(headerEl) {
+  const body = headerEl.nextElementSibling;
+  const chevron = headerEl.querySelector('.ck-chevron');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  headerEl.style.borderBottomColor = isOpen ? 'transparent' : '#e2e8f0';
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
 function _drawChecklist(el, data) {
   if (!data.length) {
     el.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;font-size:14px">Nenhuma tarefa encontrada na planilha.</div>`;
@@ -2000,11 +2009,24 @@ function _drawChecklist(el, data) {
   const clientes = [...new Set(data.map(r => r['Cliente']))];
   let html = '';
   clientes.forEach(cliente => {
-    const etapas = [...new Set(data.filter(r => r['Cliente'] === cliente).map(r => r['Etapa']))];
-    html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:16px">
-      <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px">${cliente}</div>`;
+    const clienteTasks = data.filter(r => r['Cliente'] === cliente);
+    const etapas = [...new Set(clienteTasks.map(r => r['Etapa']))];
+    const totalDone = clienteTasks.filter(t => (t['Feito?']||'').toUpperCase() === 'TRUE').length;
+    const total = clienteTasks.length;
+    const allDone = totalDone === total;
+
+    html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px;overflow:hidden">
+      <div onclick="toggleClientChecklist(this)" style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background .15s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:15px;font-weight:700;color:#0f172a">${cliente}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${allDone?'#dcfce7':'#fff7ed'};color:${allDone?'#16a34a':'#f97316'}">${allDone?'✓ Concluído':totalDone+'/'+total+' tarefas'}</span>
+        </div>
+        <span class="ck-chevron" style="font-size:10px;color:#94a3b8;transition:transform .2s;display:inline-block">▼</span>
+      </div>
+      <div style="display:none;padding:16px 20px">`;
+
     etapas.forEach(etapa => {
-      const tasks = data.filter(r => r['Cliente'] === cliente && r['Etapa'] === etapa);
+      const tasks = clienteTasks.filter(r => r['Etapa'] === etapa);
       const doneCnt = tasks.filter(t => (t['Feito?']||'').toUpperCase() === 'TRUE').length;
       const allDone = doneCnt === tasks.length;
       html += `<div style="margin-bottom:10px">
@@ -2018,7 +2040,8 @@ function _drawChecklist(el, data) {
       });
       html += `</div>`;
     });
-    html += `</div>`;
+
+    html += `</div></div>`;
   });
   el.innerHTML = html;
 }
