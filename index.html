@@ -1903,9 +1903,9 @@ function renderPipelinePane() {
   let html = '<div style="display:flex;flex-direction:column;gap:14px">';
 
   const sortedPipeline = [...pipeline].sort((a, b) => {
-    const aDone = a.etapas.filter(e => e.done).length === a.etapas.length ? 1 : 0;
-    const bDone = b.etapas.filter(e => e.done).length === b.etapas.length ? 1 : 0;
-    return aDone - bDone;
+    const aPct = a.etapas.filter(e => e.done).length / a.etapas.length;
+    const bPct = b.etapas.filter(e => e.done).length / b.etapas.length;
+    return aPct - bPct;
   });
 
   sortedPipeline.forEach((c) => {
