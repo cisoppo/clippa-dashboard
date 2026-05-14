@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipamentos · Clippa</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc; color: #1e293b; padding: 28px 32px;
+    }
+    h1 { font-size: 21px; font-weight: 800; color: #1e293b; }
+    .subtitle { font-size: 13px; color: #64748b; margin: 4px 0 24px; }
+
+    .card {
+      background: #fff; border-radius: 14px;
+      border: 1px solid #e2e8f0; padding: 24px; margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #94a3b8; margin-bottom: 14px;
+    }
+
+    /* ── System type buttons ── */
+    .type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 22px; }
+
+    .type-btn {
+      padding: 16px 10px; border-radius: 12px; border: 2px solid #e2e8f0;
+      background: #fff; cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .type-btn:hover  { border-color: #f97316; background: #fff7ed; }
+    .type-btn.active { border-color: #f97316; background: #fff7ed; }
+    .type-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+    .type-name { font-size: 13px; font-weight: 700; color: #1e293b; display: block; }
+    .type-desc { font-size: 11px; color: #64748b; margin-top: 3px; display: block; line-height: 1.4; }
+    .type-btn.active .type-name { color: #c2410c; }
+    .type-btn.active .type-desc { color: #9a3412; }
+
+    /* ── Quantity inputs ── */
+    .inputs-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .input-group { flex: 1; min-width: 150px; }
+    .input-group label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 7px; }
+    .qty-input {
+      width: 100%; padding: 11px 14px; border-radius: 9px;
+      border: 1.5px solid #e2e8f0; font-size: 18px; font-weight: 700;
+      color: #1e293b; outline: none; transition: border-color .15s;
+      background: #fff;
+    }
+    .qty-input:focus { border-color: #f97316; }
+
+    /* ── Placar toggle ── */
+    .placar-row {
+      margin-top: 18px; padding-top: 18px;
+      border-top: 1px solid #f1f5f9;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toggle-wrap { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #e2e8f0;
+      border-radius: 22px; cursor: not-allowed; transition: .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: .2s;
+    }
+    .toggle-label { font-size: 13px; color: #94a3b8; }
+    .badge-soon {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px;
+      background: #fef9c3; color: #a16207;
+    }
+
+    /* ── Result card ── */
+    .result-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; }
+
+    .result-header {
+      padding: 16px 22px;
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .result-header h2 { font-size: 15px; font-weight: 700; }
+    .result-meta { font-size: 12px; opacity: .88; margin-top: 2px; }
+
+    .copy-btn {
+      flex-shrink: 0; padding: 8px 16px; border-radius: 8px;
+      border: 1.5px solid rgba(255,255,255,.5); background: rgba(255,255,255,.15);
+      color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover   { background: rgba(255,255,255,.28); }
+    .copy-btn.copied  { background: rgba(255,255,255,.38); }
+
+    /* ── Equipment table ── */
+    .equip-table { width: 100%; border-collapse: collapse; }
+
+    .equip-table thead th {
+      padding: 10px 16px; background: #f8fafc; text-align: left;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; color: #64748b;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .equip-table thead th.th-qty { width: 54px; text-align: center; }
+    .equip-table thead th.th-code { width: 200px; }
+
+    .equip-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+    .equip-table tbody tr:last-child { border-bottom: none; }
+    .equip-table tbody tr:hover { background: #fafafa; }
+
+    .equip-table td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+    .td-qty { text-align: center; font-size: 18px; font-weight: 800; color: #f97316; }
+    .td-code { font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 11px; color: #64748b; }
+
+    .badge { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-left: 7px; vertical-align: middle; }
+    .badge-base { background: #dbeafe; color: #1d4ed8; }
+    .badge-new  { background: #dcfce7; color: #16a34a; }
+    .badge-cam  { background: #fef3c7; color: #b45309; }
+
+    .divider-row td { padding: 6px 16px; background: #f8fafc; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
+
+    /* ── Contract text ── */
+    .contract-section {
+      padding: 16px 22px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .contract-section-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: #94a3b8; margin-bottom: 10px;
+    }
+    .contract-text {
+      font-family: 'SF Mono', 'Fira Mono', monospace;
+      font-size: 12px; color: #475569;
+      line-height: 1.9; white-space: pre-wrap;
+      background: #fff; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: 14px 16px;
+    }
+
+    /* ── Summary footer ── */
+    .summary-footer {
+      padding: 12px 22px; border-top: 1px solid #f1f5f9;
+      display: flex; gap: 20px; align-items: center;
+    }
+    .summary-stat { font-size: 12px; color: #64748b; }
+    .summary-stat span { font-weight: 700; color: #1e293b; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      padding: 48px 24px; text-align: center;
+      color: #94a3b8; font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<h1>🔧 Configurador de Equipamentos</h1>
+<p class="subtitle">Selecione o tipo de sistema e as câmeras para gerar a lista completa para o contrato</p>
+
+<!-- Config -->
+<div class="card">
+  <div class="section-label">Tipo de Sistema</div>
+  <div class="type-grid">
+    <button class="type-btn active" onclick="setType('antigo')" id="btn-antigo">
+      <span class="type-icon">📷</span>
+      <span class="type-name">Sistema Antigo</span>
+      <span class="type-desc">Câmera Dome Hikvision<br>sem Mini PC</span>
+    </button>
+    <button class="type-btn" onclick="setType('novo')" id="btn-novo">
+      <span class="type-icon">🖥️</span>
+      <span class="type-name">Sistema Novo</span>
+      <span class="type-desc">Mini PC + câmeras<br>novas ou existentes</span>
+    </button>
+    <button class="type-btn" onclick="setType('servidor')" id="btn-servidor">
+      <span class="type-icon">📡</span>
+      <span class="type-name">Só Servidor</span>
+      <span class="type-desc">Câmeras já instaladas<br>só Mini PC + placas</span>
+    </button>
+  </div>
+
+  <div class="inputs-row">
+    <div class="input-group" id="group-new">
+      <label id="label-new">Câmeras novas</label>
+      <input type="number" class="qty-input" id="new-cams" min="0" max="30" value="4" oninput="render()">
+    </div>
+    <div class="input-group" id="group-existing" style="display:none">
+      <label>Câmeras já instaladas</label>
+      <input type="number" class="qty-input" id="existing-cams" min="0" max="30" value="0" oninput="render()">
+    </div>
+  </div>
+
+  <div class="placar-row">
+    <label class="toggle-wrap">
+      <input type="checkbox" id="placar-toggle" disabled>
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Incluir Placar Digital</span>
+    <span class="badge-soon">Em breve</span>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="result-card" id="result-card">
+  <div class="empty-state">
+    <span class="empty-icon">📋</span>
+    Configure o sistema acima para gerar a lista de equipamentos
+  </div>
+</div>
+
+<script>
+const KITS = {
+  antigo: {
+    name: 'Sistema Antigo',
+    perCamera: [
+      { item: 'Câmera Dome IP PoE Hikvision 2MP, lente 2,8mm',         code: 'DS-2CD2121G0-IS',       cat: 'cam' },
+      { item: 'Botoeira Botão de Comando Stilus com Alarme e Fechadura', code: '',                      cat: 'cam' },
+      { item: 'Controle 433MHz Alarme RF',                               code: '',                      cat: 'cam' },
+      { item: 'Módulo Relé 1 Canal IPEC 433Hz',                          code: '',                      cat: 'cam' },
+      { item: 'Cartão de Memória 32GB',                                   code: '',                      cat: 'cam' },
+      { item: 'Fonte 12V 1A',                                             code: '',                      cat: 'cam' },
+    ],
+    per2Cameras: [
+      { item: 'Switch PoE 5 Portas 100Mbps Hikvision',                   code: 'DS-3E0105P-E/M(B)',     cat: 'cam' },
+    ],
+  },
+  novo: {
+    name: 'Sistema Novo',
+    baseFixed: [
+      { item: 'Mini PC WP Informática Intel i7 16GB RAM 480GB SSD Windows 10', code: '',                cat: 'base' },
+      { item: 'ESP32 DOIT Devkit Com ESP32-WROOM-32',                           code: '',                cat: 'base' },
+      { item: 'Cabo USB Micro',                                                  code: '',                cat: 'base' },
+    ],
+    switch4: { item: 'Switch 4 Portas PoE Inteligente Ethernet Hikvision', code: 'DS-3E1105P-EI/M', cat: 'base' },
+    switch8: { item: 'Switch 8 Portas PoE Hikvision',                      code: 'HK1005',          cat: 'base' },
+    perNewCamera: [
+      { item: 'Câmera Bullet IP Hikvision 4MP/2K, lente 2,8mm',               code: 'DS-2CD1041G0-I',  cat: 'new' },
+    ],
+    perCamera: [
+      { item: 'Botoeira Stilus Contato Seco NO',                               code: '',                cat: 'cam' },
+      { item: 'Placa Controladora RF 433MHz',                                  code: '',                cat: 'cam' },
+      { item: 'Controle RF 433MHz',                                            code: '',                cat: 'cam' },
+    ],
+  },
+  servidor: {
+    name: 'Só Servidor',
+    base: [
+      { item: 'Mini PC WP Informática Intel i7 16GB RAM 480GB SSD Windows 10', code: '', cat: 'base' },
+    ],
+    perCamera: [
+      { item: 'Placa Controladora RF 433MHz',                                   code: '', cat: 'cam' },
+    ],
+  },
+};
+
+let currentType = 'antigo';
+
+function setType(t) {
+  currentType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + t).classList.add('active');
+
+  const gNew      = document.getElementById('group-new');
+  const gExisting = document.getElementById('group-existing');
+  const lNew      = document.getElementById('label-new');
+
+  if (t === 'antigo') {
+    gNew.style.display      = '';
+    gExisting.style.display = 'none';
+    lNew.textContent        = 'Câmeras novas';
+  } else if (t === 'novo') {
+    gNew.style.display      = '';
+    gExisting.style.display = '';
+    lNew.textContent        = 'Câmeras novas';
+  } else {
+    gNew.style.display      = 'none';
+    gExisting.style.display = '';
+  }
+  render();
+}
+
+function buildItems() {
+  const nNew = parseInt(document.getElementById('new-cams').value)      || 0;
+  const nExi = parseInt(document.getElementById('existing-cams').value) || 0;
+  const nAll = nNew + nExi;
+  const kit  = KITS[currentType];
+  const out  = [];
+
+  if (currentType === 'antigo') {
+    kit.perCamera.forEach(e  => out.push({ ...e, qty: nNew }));
+    const sw = Math.ceil(nNew / 4);
+    kit.per2Cameras.forEach(e => out.push({ ...e, qty: sw }));
+  } else if (currentType === 'novo') {
+    kit.baseFixed.forEach(e => out.push({ ...e, qty: 1 }));
+    const sw = nAll <= 4 ? kit.switch4 : kit.switch8;
+    out.push({ ...sw, qty: 1 });
+    if (nNew > 0) kit.perNewCamera.forEach(e => out.push({ ...e, qty: nNew }));
+    if (nAll > 0) kit.perCamera.forEach(e    => out.push({ ...e, qty: nAll }));
+  } else {
+    kit.base.forEach(e    => out.push({ ...e, qty: 1    }));
+    if (nExi > 0) kit.perCamera.forEach(e => out.push({ ...e, qty: nExi }));
+  }
+  return out.filter(i => i.qty > 0);
+}
+
+const CAT_LABEL = { base: 'Servidor', new: 'Câmera nova', cam: 'Por câmera' };
+const CAT_ORDER = { base: 0, new: 1, cam: 2 };
+
+function render() {
+  const items = buildItems();
+  if (!items.length) {
+    document.getElementById('result-card').innerHTML =
+      '<div class="empty-state"><span class="empty-icon">📋</span>Informe o número de câmeras para gerar a lista</div>';
+    return;
+  }
+
+  const nNew = parseInt(document.getElementById('new-cams').value)      || 0;
+  const nExi = parseInt(document.getElementById('existing-cams').value) || 0;
+
+  // subtitle
+  let meta = '';
+  if (currentType === 'antigo') {
+    meta = `${nNew} câmera${nNew !== 1 ? 's' : ''} · Sistema Antigo`;
+  } else if (currentType === 'novo') {
+    const parts = [];
+    if (nNew > 0) parts.push(`${nNew} nova${nNew !== 1 ? 's' : ''}`);
+    if (nExi > 0) parts.push(`${nExi} existente${nExi !== 1 ? 's' : ''}`);
+    meta = `${nNew + nExi} câmera${(nNew+nExi) !== 1 ? 's' : ''} (${parts.join(' + ')}) · Sistema Novo`;
+  } else {
+    meta = `${nExi} câmera${nExi !== 1 ? 's' : ''} existente${nExi !== 1 ? 's' : ''} · Só Servidor`;
+  }
+
+  // group by category
+  const groups = {};
+  items.forEach(i => {
+    if (!groups[i.cat]) groups[i.cat] = [];
+    groups[i.cat].push(i);
+  });
+  const catOrder = ['base', 'new', 'cam'];
+
+  let rows = '';
+  catOrder.forEach(cat => {
+    if (!groups[cat]) return;
+    if (currentType !== 'antigo') {
+      rows += `<tr class="divider-row"><td colspan="3">${CAT_LABEL[cat]}</td></tr>`;
+    }
+    groups[cat].forEach(i => {
+      const badgeHtml = currentType !== 'antigo'
+        ? `<span class="badge badge-${i.cat}">${CAT_LABEL[i.cat]}</span>`
+        : '';
+      rows += `<tr>
+        <td class="td-qty">${i.qty}</td>
+        <td>${i.item}${badgeHtml}</td>
+        <td class="td-code">${i.code || '—'}</td>
+      </tr>`;
+    });
+  });
+
+  // contract text
+  const contractLines = items.map(i => `${i.qty}x ${i.item}${i.code ? ' – ' + i.code : ''}`).join('\n');
+
+  const totalQty   = items.reduce((s, i) => s + i.qty, 0);
+  const totalTypes = items.length;
+
+  document.getElementById('result-card').innerHTML = `
+    <div class="result-header">
+      <div>
+        <h2>Lista de Equipamentos</h2>
+        <div class="result-meta">${meta}</div>
+      </div>
+      <button class="copy-btn" id="copy-btn" onclick="copyList()">📋 Copiar lista</button>
+    </div>
+    <table class="equip-table">
+      <thead>
+        <tr>
+          <th class="th-qty">Qtd</th>
+          <th>Equipamento</th>
+          <th class="th-code">Código / Modelo</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="summary-footer">
+      <div class="summary-stat"><span>${totalTypes}</span> tipos de equipamento</div>
+      <div class="summary-stat"><span>${totalQty}</span> itens no total</div>
+    </div>
+    <div class="contract-section">
+      <div class="contract-section-label">Texto pronto para o contrato</div>
+      <pre class="contract-text" id="contract-text">${contractLines}</pre>
+    </div>
+  `;
+}
+
+function copyList() {
+  const text = document.getElementById('contract-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

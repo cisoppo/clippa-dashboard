@@ -377,6 +377,9 @@
   <button class="nav-item" onclick="switchTab('cs')">
     <span class="nav-icon">💬</span><span class="nav-label"> CS Interações</span>
   </button>
+  <button class="nav-item" onclick="switchTab('equipamentos')">
+    <span class="nav-icon">🔧</span><span class="nav-label"> Equipamentos</span>
+  </button>
   <button class="nav-item" onclick="switchTab('orcamento')">
     <span class="nav-icon">🧮</span><span class="nav-label"> Orçamento</span>
   </button>
@@ -415,6 +418,7 @@
       <div id="cliente-produto" class="tab-pane"></div>
       <div id="pipeline"        class="tab-pane"></div>
       <div id="cs"              class="tab-pane"></div>
+      <div id="equipamentos"    class="tab-pane"></div>
       <div id="orcamento"       class="tab-pane"></div>
       <div id="financeiro"      class="tab-pane"></div>
       <div id="fluxo-caixa"    class="tab-pane"></div>
@@ -2197,11 +2201,11 @@ function csMarkToday(name, safeId) {
 // TAB SWITCHER
 // ═══════════════════════════════════════════
 let builtTabs={};
-const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro','fluxo-caixa'];
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','equipamentos','orcamento','financeiro','fluxo-caixa'];
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
-  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro','fluxo-caixa'];
+  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','equipamentos','orcamento','financeiro','fluxo-caixa'];
   document.getElementById('kpi-grid').style.display=hideKPI.includes(id)?'none':'';
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -2218,10 +2222,16 @@ function switchTab(id){
     if(id==='cliente-produto') buildClienteProduto();
     if(id==='pipeline')        buildPipeline();
     if(id==='cs')             buildCS();
+    if(id==='equipamentos')   buildEquipamentos();
     if(id==='orcamento')      buildOrcamento();
     if(id==='financeiro')     buildFinanceiro();
     if(id==='fluxo-caixa')   buildFluxoCaixa();
   }
+}
+
+function buildEquipamentos(){
+  document.getElementById('equipamentos').innerHTML =
+    '<iframe class="iframe-tab" src="./equipamentos.html" title="Equipamentos Clippa"></iframe>';
 }
 
 function buildFinanceiro(){
