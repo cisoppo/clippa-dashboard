@@ -706,6 +706,144 @@
     </div>
   </div>
 
+  <!-- CAPEX -->
+  <div class="section">
+    <h2>CAPEX — Capital Expenditure</h2>
+
+    <div class="chart-card" style="margin-bottom:20px;background:linear-gradient(135deg,#fff7ed,#fff);border-left:4px solid var(--orange)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+        <div>
+          <h3 style="margin-bottom:12px">O que é CAPEX?</h3>
+          <p style="font-size:13px;color:#475569;line-height:1.7">
+            <strong style="color:#0f172a">CAPEX</strong> (Capital Expenditure) são os gastos com ativos que ficam no negócio gerando valor ao longo do tempo — equipamentos, hardware, infraestrutura.<br><br>
+            Diferente do <strong style="color:#0f172a">OPEX</strong> (Operating Expenditure), que são os custos operacionais recorrentes do dia a dia (salários, software, contador).<br><br>
+            <strong style="color:var(--orange)">Na Clippa:</strong> o CAPEX é o hardware instalado em cada quadra — câmera, switch, botoeira, Orange Pi e cabos.
+          </p>
+        </div>
+        <div>
+          <h3 style="margin-bottom:12px">CAPEX vs OPEX — Clippa</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="background:#fff7ed;border-radius:10px;padding:14px;border:1px solid #fed7aa">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c2410c;margin-bottom:6px">CAPEX — Por instalação</div>
+              <div style="font-size:13px;color:#1e293b;display:flex;flex-direction:column;gap:4px">
+                <span>📷 Câmera Hikvision</span>
+                <span>🔌 Switch + Botoeira</span>
+                <span>🖥️ Orange Pi + Cabos</span>
+                <span>🔧 Kits e acessórios</span>
+              </div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:10px;padding:14px;border:1px solid #bbf7d0">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#15803d;margin-bottom:6px">OPEX — Mensal fixo</div>
+              <div style="font-size:13px;color:#1e293b;display:flex;flex-direction:column;gap:4px">
+                <span>💻 Lovable + Backblaze</span>
+                <span>👨‍💻 Lucas O. (dev/suporte)</span>
+                <span>📋 Contabilidade</span>
+                <span>📱 Outros (telefone, etc.)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="unit-grid" style="margin-bottom:20px">
+      <div class="unit-card" style="border-top:3px solid var(--orange)">
+        <div class="unit-label">CAPEX por Instalação</div>
+        <div class="unit-val" style="color:var(--orange)">~R$2.500</div>
+        <div class="unit-sub">custo médio de hardware por cliente</div>
+      </div>
+      <div class="unit-card" style="border-top:3px solid #ef4444">
+        <div class="unit-label">CAPEX Total Investido</div>
+        <div class="unit-val" style="color:#ef4444">~R$45.000</div>
+        <div class="unit-sub">18 clientes × R$2.500</div>
+      </div>
+      <div class="unit-card" style="border-top:3px solid #22c55e">
+        <div class="unit-label">Recuperado via Implementação</div>
+        <div class="unit-val" style="color:#15803d">~R$36.000</div>
+        <div class="unit-sub">clientes pagam ~R$2.000 de volta (parcelado)</div>
+      </div>
+      <div class="unit-card" style="border-top:3px solid var(--purple)">
+        <div class="unit-label">CAPEX Líquido por Cliente</div>
+        <div class="unit-val" style="color:var(--purple)">~R$500</div>
+        <div class="unit-sub">custo permanente após recuperação</div>
+      </div>
+      <div class="unit-card" style="border-top:3px solid #f59e0b">
+        <div class="unit-label">CAPEX Líquido Total</div>
+        <div class="unit-val" style="color:#b45309">~R$9.000</div>
+        <div class="unit-sub">18 clientes × R$500 líquido</div>
+      </div>
+      <div class="unit-card" style="border-top:3px solid #22c55e">
+        <div class="unit-label">Payback do CAPEX</div>
+        <div class="unit-val" style="color:#15803d">~2 meses</div>
+        <div class="unit-sub">para recuperar o custo líquido via MRR</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>CAPEX por Cliente — Fluxo de Recuperação</h3>
+      <p class="subtitle">Como o investimento em hardware é recuperado ao longo do tempo</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Momento</th>
+              <th class="td-right">Fluxo de Caixa</th>
+              <th class="td-right">Acumulado</th>
+              <th>O que acontece</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Mês 0 — Instalação</strong></td>
+              <td class="td-right" style="color:#ef4444"><strong>-R$2.500</strong></td>
+              <td class="td-right" style="color:#ef4444">-R$2.500</td>
+              <td>Clippa compra e instala o hardware</td>
+            </tr>
+            <tr>
+              <td>Mês 1</td>
+              <td class="td-right" style="color:#15803d">+R$700</td>
+              <td class="td-right" style="color:#ef4444">-R$1.800</td>
+              <td>MRR R$300 + parcela implementação R$400</td>
+            </tr>
+            <tr>
+              <td>Mês 2</td>
+              <td class="td-right" style="color:#15803d">+R$700</td>
+              <td class="td-right" style="color:#ef4444">-R$1.100</td>
+              <td>MRR R$300 + parcela implementação R$400</td>
+            </tr>
+            <tr>
+              <td>Mês 3</td>
+              <td class="td-right" style="color:#15803d">+R$700</td>
+              <td class="td-right" style="color:#ef4444">-R$400</td>
+              <td>MRR R$300 + parcela implementação R$400</td>
+            </tr>
+            <tr>
+              <td>Mês 4</td>
+              <td class="td-right" style="color:#15803d">+R$700</td>
+              <td class="td-right" style="color:#15803d"><strong>+R$300</strong></td>
+              <td>MRR R$300 + última parcela R$400 — <strong>CAPEX recuperado</strong> ✓</td>
+            </tr>
+            <tr>
+              <td>Mês 5 em diante</td>
+              <td class="td-right" style="color:#15803d">+R$300</td>
+              <td class="td-right" style="color:#15803d">crescendo</td>
+              <td>Apenas MRR — lucro puro por cliente</td>
+            </tr>
+            <tr class="total-row">
+              <td><strong>LTV 12 meses</strong></td>
+              <td class="td-right"><strong>+R$5.200</strong></td>
+              <td class="td-right" style="color:#15803d"><strong>+R$2.700 lucro</strong></td>
+              <td>Após recuperar todo o CAPEX investido</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;padding:14px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa;font-size:13px;color:#92400e">
+        💡 <strong>Como responder quando perguntarem:</strong> <em>"Nosso CAPEX é de ~R$2.500 por instalação, sendo ~R$2.000 recuperados via taxa de implementação parcelada. Com 18 clientes instalados, investimos ~R$45k em hardware, dos quais ~R$36k já foram ou serão recuperados. CAPEX líquido por cliente: ~R$500, com payback em ~2 meses via MRR."</em>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <footer>
