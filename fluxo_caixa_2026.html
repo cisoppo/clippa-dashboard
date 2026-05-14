@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo de Caixa Clippa 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #1e293b; }
+
+  header {
+    background: #fff; border-bottom: 2px solid #f97316;
+    padding: 20px 32px; display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 38px; height: 38px; background: #f97316; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 17px; color: white; }
+  .logo h1 { font-size: 20px; font-weight: 800; color: #1e293b; }
+  .logo span { color: #f97316; }
+  .header-meta { text-align: right; font-size: 12px; color: #64748b; }
+  .header-meta strong { color: #f97316; font-size: 13px; }
+
+  .container { max-width: 1300px; margin: 0 auto; padding: 28px 24px; }
+
+  h2 { font-size: 17px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; color: #0f172a; }
+  h2::before { content: ''; display: block; width: 4px; height: 20px; background: #f97316; border-radius: 2px; }
+
+  .section { margin-bottom: 36px; }
+
+  /* ALERT BANNER */
+  .alert { padding: 14px 20px; border-radius: 12px; font-size: 13px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; line-height: 1.6; }
+  .alert.danger  { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
+  .alert.warning { background: #fff7ed; border-left: 4px solid #f97316; color: #9a3412; }
+  .alert.success { background: #f0fdf4; border-left: 4px solid #22c55e; color: #15803d; }
+  .alert.info    { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1d4ed8; }
+  .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+  /* EXPLAIN CARD */
+  .explain-card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #e2e8f0; margin-bottom: 20px; }
+  .explain-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #0f172a; }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .kpi { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .kpi.orange::before { background: #f97316; }
+  .kpi.green::before  { background: #22c55e; }
+  .kpi.red::before    { background: #ef4444; }
+  .kpi.yellow::before { background: #f59e0b; }
+  .kpi.purple::before { background: #6025e1; }
+  .kpi label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; display: block; margin-bottom: 6px; }
+  .kpi .val { font-size: 24px; font-weight: 900; line-height: 1.1; }
+  .kpi .sub { font-size: 11px; color: #64748b; margin-top: 5px; }
+
+  /* CHART CARD */
+  .chart-card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #e2e8f0; }
+  .chart-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+  .chart-card .subtitle { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: .7px; padding: 10px 14px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fffbf7; }
+  .tr { text-align: right; font-variant-numeric: tabular-nums; }
+  .tc { text-align: center; }
+  .positive { color: #15803d; font-weight: 600; }
+  .negative { color: #dc2626; font-weight: 700; }
+  .neutral  { color: #64748b; }
+  .row-risk td { background: #fef2f2 !important; }
+  .row-warn td { background: #fff7ed !important; }
+  .row-good td { background: #f0fdf4 !important; }
+  .row-now  td { background: #eff6ff !important; font-weight: 600; }
+  .total-row td { background: #f8fafc !important; font-weight: 800; border-top: 2px solid #e2e8f0; }
+
+  /* SCENARIO TOGGLE */
+  .scenario-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .sc-tab { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 2px solid #e2e8f0; background: #fff; color: #64748b; transition: all .15s; }
+  .sc-tab.active { background: #f97316; color: #fff; border-color: #f97316; }
+  .sc-tab:hover:not(.active) { border-color: #f97316; color: #f97316; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-red    { background: #fee2e2; color: #b91c1c; }
+  .badge-orange { background: #fff7ed; color: #c2410c; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+
+  footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; margin-top: 32px; background: #fff; }
+
+  @media(max-width:900px){
+    .grid-2 { grid-template-columns: 1fr; }
+    main { padding: 20px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <div>
+      <h1><span>CLIPPA</span> — Fluxo de Caixa 2026</h1>
+      <p style="font-size:12px;color:#64748b">Demonstrativo de Fluxo de Caixa (DFC) · Mai–Dez/2026</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <p>Saldo inicial (mai/26)</p>
+    <strong>~R$0 (caixa zerado)</strong>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- AVISO CRÍTICO -->
+  <div class="alert danger">
+    <span class="alert-icon">🚨</span>
+    <div><strong>Atenção: caixa atual ~R$0.</strong> Com saldo zerado, qualquer mês em que o volume de instalações superar 2 novos clientes pode tornar o caixa negativo. A operação tem fôlego apenas se crescer de forma gradual (até 2 clientes/mês). Para crescer mais rápido, é necessária uma reserva mínima de <strong>R$8.000–10.000</strong>.</div>
+  </div>
+
+  <!-- O QUE É DFC -->
+  <div class="section">
+    <h2>DFC vs DRE — Qual a diferença?</h2>
+    <div class="grid-2">
+      <div class="explain-card" style="border-left:4px solid #f97316">
+        <h3>📊 DRE — Demonstrativo de Resultado</h3>
+        <p style="font-size:13px;color:#475569;line-height:1.7">Registra receitas e despesas quando são <strong>geradas</strong>, independente de quando o dinheiro entra. Um contrato assinado já vira receita — mesmo que o cliente ainda não pagou.</p>
+        <div style="margin-top:12px;padding:10px;background:#fff7ed;border-radius:8px;font-size:12px;color:#c2410c">
+          ⚠️ O DRE pode mostrar <strong>lucro de R$5.911 em junho</strong> enquanto o caixa está zerado. Isso acontece porque a receita "existe" mas o dinheiro ainda não chegou na conta.
+        </div>
+      </div>
+      <div class="explain-card" style="border-left:4px solid #22c55e">
+        <h3>💰 DFC — Fluxo de Caixa</h3>
+        <p style="font-size:13px;color:#475569;line-height:1.7">Registra apenas o que <strong>entrou e saiu da conta</strong> de fato. Mostra a realidade do caixa: se você pode pagar as contas, comprar equipamentos e sobreviver ao mês.</p>
+        <div style="margin-top:12px;padding:10px;background:#f0fdf4;border-radius:8px;font-size:12px;color:#15803d">
+          ✅ O DFC mostra se a Clippa tem dinheiro real para comprar equipamentos dos próximos clientes — <strong>o dado mais crítico do negócio agora.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi orange">
+      <label>Saldo Inicial (Mai/26)</label>
+      <div class="val">~R$0</div>
+      <div class="sub">caixa zerado no momento</div>
+    </div>
+    <div class="kpi green">
+      <label>Saldo Projetado (Jun/26)</label>
+      <div class="val" style="color:#15803d">R$7.198</div>
+      <div class="sub">após MRR + implementações de junho</div>
+    </div>
+    <div class="kpi green">
+      <label>Saldo Projetado (Dez/26)</label>
+      <div class="val" style="color:#15803d">R$26.400</div>
+      <div class="sub">cenário 2 novos clientes/mês</div>
+    </div>
+    <div class="kpi red">
+      <label>Reserva Mínima Recomendada</label>
+      <div class="val" style="color:#dc2626">R$8.000</div>
+      <div class="sub">para crescer até 4 clientes/mês</div>
+    </div>
+    <div class="kpi yellow">
+      <label>Risco Crítico</label>
+      <div class="val" style="color:#b45309">3+ inst./mês</div>
+      <div class="sub">com caixa zero → pode ficar negativo</div>
+    </div>
+    <div class="kpi purple">
+      <label>Ponto de Auto-suficiência</label>
+      <div class="val" style="color:#6025e1">Ago/26</div>
+      <div class="sub">caixa acima de R$10k com 2 clientes/mês</div>
+    </div>
+  </div>
+
+  <!-- CENÁRIO TABS + TABELA -->
+  <div class="section">
+    <h2>Fluxo de Caixa Mensal — Cenários</h2>
+
+    <div class="scenario-tabs">
+      <div class="sc-tab active" onclick="showScenario('A')">Cenário A — 1 novo/mês (conservador)</div>
+      <div class="sc-tab" onclick="showScenario('B')">Cenário B — 2 novos/mês (realista)</div>
+      <div class="sc-tab" onclick="showScenario('C')">Cenário C — 4 novos/mês (meta)</div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:20px">
+      <div id="tabela-dfc"></div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="section">
+    <h2>Evolução do Saldo de Caixa</h2>
+    <div class="chart-card">
+      <h3>Saldo de caixa acumulado — 3 cenários</h3>
+      <p class="subtitle">Partindo de R$0 em maio/2026. Linha vermelha = caixa negativo (risco).</p>
+      <canvas id="cashChart" height="320"></canvas>
+    </div>
+  </div>
+
+  <!-- RISCO E RECOMENDAÇÕES -->
+  <div class="section">
+    <h2>Análise de Risco e Recomendações</h2>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="chart-card">
+        <h3>⚠️ Quando o caixa fica negativo</h3>
+        <p class="subtitle">Cenário com caixa inicial R$0</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <div style="padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
+            <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:4px">✅ 1–2 novos clientes/mês</div>
+            <div style="font-size:13px;color:#1e293b">Caixa nunca fica negativo. Cresce gradualmente de R$0 até ~R$26.000 em dezembro.</div>
+          </div>
+          <div style="padding:12px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa">
+            <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:4px">⚠️ 3 novos clientes/mês</div>
+            <div style="font-size:13px;color:#1e293b">Caixa fica negativo em julho (–R$2.300). Precisa de R$3.000 de reserva para não travar.</div>
+          </div>
+          <div style="padding:12px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+            <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:4px">🚨 4+ novos clientes/mês</div>
+            <div style="font-size:13px;color:#1e293b">Caixa chega a –R$8.000 em julho. Necessário R$10.000 de reserva ou financiamento externo.</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>💡 Como resolver o problema de caixa</h3>
+        <p class="subtitle">Estratégias para crescer sem travar o fluxo</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <div style="padding:12px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
+            <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px">1. Cobrar implementação maior na entrada</div>
+            <div style="font-size:13px;color:#1e293b">Se o cliente pagar R$1.500 na assinatura (em vez de parcelar tudo), você financia o próximo cliente com o dinheiro desse.</div>
+          </div>
+          <div style="padding:12px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
+            <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px">2. Junho é um mês-chave</div>
+            <div style="font-size:13px;color:#1e293b">O salto de R$0 → R$7.200 em junho cria a reserva. <strong>Não gastar esse dinheiro em julho</strong> — é o colchão para crescer.</div>
+          </div>
+          <div style="padding:12px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
+            <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px">3. Cheque especial / limite emergencial</div>
+            <div style="font-size:13px;color:#1e293b">Ter R$5.000–8.000 de limite disponível (não necessariamente usando) como segurança para meses de instalação intensa.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA COMPARATIVA CAPEX vs CAIXA -->
+    <div class="chart-card">
+      <h3>Por que o DRE engana — Exemplo Prático (Junho/26)</h3>
+      <p class="subtitle">Comparação entre o que o DRE mostra vs o que realmente passa no caixa</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Item</th><th class="tr">DRE (competência)</th><th class="tr">DFC (caixa real)</th><th>Diferença</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>MRR de junho</td><td class="tr">+R$8.045</td><td class="tr">+R$8.045</td><td><span class="badge badge-green">Igual</span></td></tr>
+            <tr><td>Implementações</td><td class="tr">+R$1.800</td><td class="tr">+R$1.800</td><td><span class="badge badge-green">Igual</span></td></tr>
+            <tr><td>Custos fixos</td><td class="tr">–R$2.000</td><td class="tr">–R$2.000</td><td><span class="badge badge-green">Igual</span></td></tr>
+            <tr><td>Equipamentos (CSV)</td><td class="tr" style="color:#64748b">diluído na depreciação</td><td class="tr">–R$1.934</td><td><span class="badge badge-orange">DFC maior saída</span></td></tr>
+            <tr><td>Impostos ~6%</td><td class="tr">–R$483</td><td class="tr">–R$483</td><td><span class="badge badge-green">Igual</span></td></tr>
+            <tr><td>Contratos futuros (valor)</td><td class="tr">+R$0</td><td class="tr">+R$0</td><td><span class="badge badge-gray">—</span></td></tr>
+            <tr class="total-row">
+              <td><strong>RESULTADO JUNHO</strong></td>
+              <td class="tr"><strong style="color:#15803d">+R$5.362 lucro</strong></td>
+              <td class="tr"><strong style="color:#15803d">+R$5.428 caixa</strong></td>
+              <td><span class="badge badge-green">Próximos neste mês</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#fff7ed;border-radius:10px;font-size:12px;color:#92400e;line-height:1.6">
+        ⚠️ <strong>Junho é tranquilo porque não há novas instalações.</strong> O problema aparece em julho quando você começa a instalar 2+ novos clientes por mês — saem R$5.000 de equipamentos antes de o cliente começar a pagar.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Clippa — Demonstrativo de Fluxo de Caixa 2026 · Saldo inicial: ~R$0 · Gerado em 14/05/2026</p>
+  <p style="margin-top:4px">Projeções baseadas em cenário realista (Cenário B). Implementações estimadas. Impostos ~6% Simples Nacional.</p>
+</footer>
+
+<script>
+const ORANGE = '#f97316';
+const GREEN  = '#22c55e';
+const RED    = '#ef4444';
+const PURPLE = '#6025e1';
+const GRID   = '#e2e8f0';
+const MUTED  = '#64748b';
+
+Chart.defaults.color = MUTED;
+Chart.defaults.borderColor = GRID;
+
+// ── DADOS BASE ──────────────────────────────────────────────
+const months = ['Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// Entradas fixas (MRR + implementações)
+const mrr  = [4540, 8045, 8650, 9250, 9850, 10450, 11050, 11650];
+const impl = [1436, 1800, 3000, 3000, 2000,  2000,  1500,  1000];
+
+// Saídas fixas (OPEX + CSV equip + impostos)
+const fixos  = [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000];
+const csvEq  = [1934, 1934, 1739, 1617, 1488, 1392, 1224, 1078];
+const taxas  = mrr.map(m => Math.round(m * 0.06));
+
+// CAPEX novos clientes por cenário (a partir de julho = índice 2)
+// Índices: Mai=0, Jun=1, Jul=2, Ago=3, Set=4, Out=5, Nov=6, Dez=7
+const newCapex = {
+  A: [0, 0, 2500,  2500,  2500,  2500,  2500,  2500],   // 1 cliente/mês
+  B: [0, 0, 5000,  5000,  5000,  5000,  5000,  5000],   // 2 clientes/mês
+  C: [0, 0, 10000, 10000, 10000, 10000, 10000, 10000],  // 4 clientes/mês
+};
+
+// Implementação adicional de novos clientes (recebida parcelada)
+const newImpl = {
+  A: [0, 0, 400,  800,  1200, 1600, 2000, 2400],
+  B: [0, 0, 800,  1600, 2400, 3200, 4000, 4800],
+  C: [0, 0, 1600, 3200, 4800, 6400, 8000, 9600],
+};
+
+function calcScenario(sc) {
+  const results = [];
+  let balance = 0;
+  for (let i = 0; i < 8; i++) {
+    const entradas = mrr[i] + impl[i] + (newImpl[sc][i] || 0);
+    const saidas   = fixos[i] + csvEq[i] + taxas[i] + (newCapex[sc][i] || 0);
+    const net      = entradas - saidas;
+    balance       += net;
+    results.push({ entradas, saidas, net, balance,
+      mrr: mrr[i], impl: impl[i] + (newImpl[sc][i]||0),
+      fixos: fixos[i], csvEq: csvEq[i], taxas: taxas[i],
+      capex: newCapex[sc][i] || 0 });
+  }
+  return results;
+}
+
+function fmt(v) {
+  const abs = Math.abs(v);
+  const s = 'R$' + abs.toLocaleString('pt-BR');
+  return v < 0 ? '–' + s : '+' + s;
+}
+function fmtBal(v) {
+  return (v < 0 ? '–R$' : 'R$') + Math.abs(v).toLocaleString('pt-BR');
+}
+
+const labels = {
+  A: { title: 'Cenário A — 1 novo cliente/mês (Conservador)', color: MUTED, nota: '1 novo cliente/mês de julho em diante · R$2.500 CAPEX/instalação' },
+  B: { title: 'Cenário B — 2 novos clientes/mês (Realista)',  color: ORANGE, nota: '2 novos clientes/mês de julho em diante · R$5.000 CAPEX/mês' },
+  C: { title: 'Cenário C — 4 novos clientes/mês (Meta OKR)', color: PURPLE, nota: '4 novos clientes/mês de julho em diante · R$10.000 CAPEX/mês' },
+};
+
+let currentSc = 'A';
+
+function showScenario(sc) {
+  currentSc = sc;
+  document.querySelectorAll('.sc-tab').forEach((t, i) => t.classList.toggle('active', ['A','B','C'][i] === sc));
+  renderTable(sc);
+  updateChart();
+}
+
+function rowClass(net, balance) {
+  if (balance < 0) return 'row-risk';
+  if (net < 0) return 'row-warn';
+  return '';
+}
+
+function renderTable(sc) {
+  const data = calcScenario(sc);
+  const lbl  = labels[sc];
+  let html = `
+    <p style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:4px">${lbl.title}</p>
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px">${lbl.nota}</p>
+    <div class="table-wrap"><table>
+    <thead><tr>
+      <th>Mês</th>
+      <th class="tr">MRR</th>
+      <th class="tr">Implementações</th>
+      <th class="tr">Total Entradas</th>
+      <th class="tr">OPEX Fixo</th>
+      <th class="tr">Equip. CSV</th>
+      <th class="tr">CAPEX Novos</th>
+      <th class="tr">Impostos</th>
+      <th class="tr">Total Saídas</th>
+      <th class="tr">Fluxo Líquido</th>
+      <th class="tr">Saldo Acumulado</th>
+    </tr></thead><tbody>`;
+
+  data.forEach((d, i) => {
+    const rc = i === 0 ? 'row-now' : rowClass(d.net, d.balance);
+    const balColor = d.balance < 0 ? 'negative' : 'positive';
+    const netColor = d.net < 0 ? 'negative' : 'positive';
+    const capexShow = d.capex > 0 ? `<span style="color:#dc2626">–R$${d.capex.toLocaleString('pt-BR')}</span>` : '<span style="color:#94a3b8">—</span>';
+    const riskBadge = d.balance < 0 ? '<span class="badge badge-red" style="margin-left:6px">⚠️ Negativo</span>' :
+                      d.balance < 3000 ? '<span class="badge badge-orange" style="margin-left:6px">Atenção</span>' : '';
+    html += `<tr class="${rc}">
+      <td><strong>${months[i]}/26</strong>${i===0?'<span class="badge badge-gray" style="margin-left:6px">Atual</span>':''}</td>
+      <td class="tr">R$${d.mrr.toLocaleString('pt-BR')}</td>
+      <td class="tr">R$${d.impl.toLocaleString('pt-BR')}</td>
+      <td class="tr positive">R$${d.entradas.toLocaleString('pt-BR')}</td>
+      <td class="tr neutral">–R$${d.fixos.toLocaleString('pt-BR')}</td>
+      <td class="tr neutral">–R$${d.csvEq.toLocaleString('pt-BR')}</td>
+      <td class="tr">${capexShow}</td>
+      <td class="tr neutral">–R$${d.taxas.toLocaleString('pt-BR')}</td>
+      <td class="tr negative">–R$${d.saidas.toLocaleString('pt-BR')}</td>
+      <td class="tr ${netColor}">${fmt(d.net)}</td>
+      <td class="tr ${balColor}"><strong>${fmtBal(d.balance)}</strong>${riskBadge}</td>
+    </tr>`;
+  });
+
+  const totEntradas = data.reduce((s,d) => s+d.entradas, 0);
+  const totSaidas   = data.reduce((s,d) => s+d.saidas, 0);
+  const totNet      = data.reduce((s,d) => s+d.net, 0);
+  html += `<tr class="total-row">
+    <td><strong>TOTAL Mai–Dez</strong></td>
+    <td class="tr"></td><td class="tr"></td>
+    <td class="tr positive"><strong>R$${totEntradas.toLocaleString('pt-BR')}</strong></td>
+    <td class="tr"></td><td class="tr"></td><td class="tr"></td><td class="tr"></td>
+    <td class="tr negative"><strong>–R$${totSaidas.toLocaleString('pt-BR')}</strong></td>
+    <td class="tr ${totNet>=0?'positive':'negative'}"><strong>${fmt(totNet)}</strong></td>
+    <td class="tr positive"><strong>R$${data[7].balance.toLocaleString('pt-BR')}</strong></td>
+  </tr></tbody></table></div>`;
+
+  document.getElementById('tabela-dfc').innerHTML = html;
+}
+
+// ── CHART ────────────────────────────────────────────────────
+const balA = calcScenario('A').map(d => d.balance);
+const balB = calcScenario('B').map(d => d.balance);
+const balC = calcScenario('C').map(d => d.balance);
+
+const cashChartInst = new Chart(document.getElementById('cashChart'), {
+  type: 'line',
+  data: {
+    labels: months.map(m => m+'/26'),
+    datasets: [
+      { label: 'Cenário A (1 novo/mês)', data: balA, borderColor: MUTED, backgroundColor: 'rgba(100,116,139,0.08)', borderWidth: 2, borderDash: [5,4], pointRadius: 4, fill: false, tension: 0.3 },
+      { label: 'Cenário B (2 novos/mês)', data: balB, borderColor: ORANGE, backgroundColor: 'rgba(249,115,22,0.08)', borderWidth: 3, pointRadius: 5, pointBackgroundColor: ORANGE, fill: true, tension: 0.3 },
+      { label: 'Cenário C (4 novos/mês)', data: balC, borderColor: PURPLE, backgroundColor: 'rgba(96,37,225,0.06)', borderWidth: 2, borderDash: [3,3], pointRadius: 4, fill: false, tension: 0.3 },
+      { label: 'Linha de risco (R$0)', data: Array(8).fill(0), borderColor: RED, borderWidth: 1.5, borderDash: [4,4], pointRadius: 0, fill: false },
+      { label: 'Reserva recomendada (R$8.000)', data: Array(8).fill(8000), borderColor: GREEN, borderWidth: 1.5, borderDash: [4,4], pointRadius: 0, fill: false },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16, font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: R$${ctx.raw?.toLocaleString('pt-BR')}` } }
+    },
+    scales: {
+      y: { grid: { color: GRID }, ticks: { callback: v => 'R$'+(v/1000).toFixed(0)+'k' } },
+      x: { grid: { color: GRID } }
+    }
+  }
+});
+
+function updateChart() {
+  // highlight selected scenario
+  cashChartInst.data.datasets[0].borderWidth = currentSc==='A' ? 3 : 1.5;
+  cashChartInst.data.datasets[1].borderWidth = currentSc==='B' ? 3 : 1.5;
+  cashChartInst.data.datasets[2].borderWidth = currentSc==='C' ? 3 : 1.5;
+  cashChartInst.update();
+}
+
+// init
+showScenario('B');
+</script>
+</body>
+</html>

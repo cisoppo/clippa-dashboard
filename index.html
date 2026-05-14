@@ -383,6 +383,9 @@
   <button class="nav-item" onclick="switchTab('financeiro')">
     <span class="nav-icon">📊</span><span class="nav-label"> Análise Financeira</span>
   </button>
+  <button class="nav-item" onclick="switchTab('fluxo-caixa')">
+    <span class="nav-icon">📈</span><span class="nav-label"> Fluxo de Caixa</span>
+  </button>
 
   <div class="sidebar-footer">
     <span id="header-date"></span>
@@ -414,6 +417,7 @@
       <div id="cs"              class="tab-pane"></div>
       <div id="orcamento"       class="tab-pane"></div>
       <div id="financeiro"      class="tab-pane"></div>
+      <div id="fluxo-caixa"    class="tab-pane"></div>
     </main>
   </div>
 
@@ -2193,11 +2197,11 @@ function csMarkToday(name, safeId) {
 // TAB SWITCHER
 // ═══════════════════════════════════════════
 let builtTabs={};
-const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro'];
+const TAB_IDS=['visao-geral','contratos','recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro','fluxo-caixa'];
 
 function switchTab(id){
   document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',TAB_IDS[i]===id));
-  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro'];
+  const hideKPI=['recebimentos','renovacoes','projecao','estoque','implantacao','cliente-produto','pipeline','cs','orcamento','financeiro','fluxo-caixa'];
   document.getElementById('kpi-grid').style.display=hideKPI.includes(id)?'none':'';
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -2216,12 +2220,18 @@ function switchTab(id){
     if(id==='cs')             buildCS();
     if(id==='orcamento')      buildOrcamento();
     if(id==='financeiro')     buildFinanceiro();
+    if(id==='fluxo-caixa')   buildFluxoCaixa();
   }
 }
 
 function buildFinanceiro(){
   document.getElementById('financeiro').innerHTML =
     '<iframe class="iframe-tab" src="./analise_financeira_2026.html" title="Análise Financeira Clippa 2026"></iframe>';
+}
+
+function buildFluxoCaixa(){
+  document.getElementById('fluxo-caixa').innerHTML =
+    '<iframe class="iframe-tab" src="./fluxo_caixa_2026.html" title="Fluxo de Caixa Clippa 2026"></iframe>';
 }
 
 // ═══════════════════════════════════════════
